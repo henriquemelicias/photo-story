@@ -1,0 +1,36 @@
+[build]
+target = "./crates/frontend/trunk_index.html"
+dist = "./static"
+release = false
+public_url = "/"
+
+[watch]
+watch = [
+    "./crates/frontend/trunk_index.html",
+    "./crates/frontend/src",
+    "./crates/frontend/styles",
+    "./assets"
+]
+
+[[proxy]]
+backend = "http://localhost:5550"
+rewrite = "/api"
+
+[clean]
+dist = "./static"
+
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = [
+    "-c",
+    "just _generate_tailwind_css ./crates/frontend/styles"
+]
+
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = [
+    "-c",
+    "just _update_index_html $TRUNK_STAGING_DIR/index.html"
+]

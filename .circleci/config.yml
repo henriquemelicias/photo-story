@@ -1,0 +1,101 @@
+version: 2.1
+
+executors:
+  default:
+    docker:
+      - image: cimg/rust:1.65.0
+
+commands:
+  rust-toolchain-install:
+    steps:
+      - run: rustup install nightly
+
+  mold-linker-install:
+    steps:
+      - restore_cache:
+          keys:
+            - mold-linker-v0-{{ checksum "rust-toolchain.toml" }}-{{ arch }}
+      - run: wget https://github.com/rui314/mold/releases/download/v1.7.1/mold-1.7.1-x86_64-linux.tar.gz
+      - run: tar -xzf mold*
+      - run: sudo cp -r ./mold*/* /usr/local/
+      - save_cache:
+          key: mold-linker-v0-{{ checksum "rust-toolchain.toml" }}-{{ arch }}
+          paths:
+            - "/usr/local/bin/mold"
+            - "/usr/local/lib/mold"
+            - "/usr/local/libexec/mold"
+
+  cargo-trunk-install:
+    steps:
+      - restore_cache:
+          keys:
+            - cargo-trunk-v0-{{ arch }}
+      - run: cargo install --locked trunk
+      - save_cache:
+          key: cargo-trunk-v0-{{ arch }}
+          paths:
+            - "~/cargo/bin/trunk"
+
+  setup-sccache:
+    steps:
+      - run:
+          name: Install sccache
+          command: |
+            cargo install sccache
+            # This configures Rust to use sccache.
+            echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
+            # This is the maximum space sccache cache will use on disk.
+            echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
+            sccache --version
+  save-sccache-cache:
+    parameters:
+      path:
+        type: string
+        default: "~/.cache/sccache"
+    steps:
+      - save_cache:
+          name: Save sccache cache
+          # We only upload a new cache if our Cargo.lock changed
+          # otherwise, we use the exact same key which won't upload a new cache
+          key: sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Cargo.lock" }}
+          paths:
+            - <<parameters.path>>
+  restore-sccache-cache:
+    steps:
+      - restore_cache:
+          name: Restore sccache cache
+          keys:
+            # We have multiple keys to increase the chance of a cache hit
+            # in case the Cargo.lock is updated, we still want to retrieve
+            # some cache
+            - sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Cargo.lock" }}
+            - sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+            - sccache-cache-stable-{{ arch }}
+
+jobs:
+  rust-test:
+    executor: default
+    steps:
+      - checkout
+      # Dependencies needed.
+      - run:
+          name: Apt get stuff
+          command: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --assume-yes clang
+      - rust-toolchain-install
+      - mold-linker-install
+        #- setup-sccache
+        #- restore-sccache-cache
+      - run: cargo build
+      - run: cargo clippy --fix --allow-dirty --allow-staged
+      - run: mkdir test-results
+      - run: cargo test
+        #- save-sccache-cache
+      - store_test_results:
+          path: test-results
+
+workflows:
+  version: 2
+
+  test:
+    jobs:
+      - rust-test

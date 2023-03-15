@@ -1,0 +1,11 @@
+[default]
+addr = "127.0.0.1"
+port = 5555
+static_dir = "./target/static"
+assets_dir = "./assets"
+
+[production]
+addr = "0.0.0.0"
+port = 9000
+static_dir = "./static"
+assets_dir = "./assets"
