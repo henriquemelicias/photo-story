@@ -44,6 +44,10 @@ mod non_wasm_ssr
     #[clap()]
     struct CliArgs
     {
+        // Set runtime environment.
+        #[clap( short = 'e', long = "run-env" )]
+        run_env: Option<String>,
+
         /// Set the listen addr.
         #[clap( short = 'a', long = "addr" )]
         addr: Option<String>,
@@ -64,6 +68,13 @@ mod non_wasm_ssr
         /// Set the assets files directory
         #[clap( long = "assets-dir" )]
         assets_dir: Option<String>,
+    }
+
+    #[serde_with::skip_serializing_none]
+    #[derive(Serialize)]
+    struct GeneralConfigsOverwrite
+    {
+        run_env: Option<String>,
     }
 
     #[serde_with::skip_serializing_none]
@@ -89,6 +100,11 @@ mod non_wasm_ssr
         let cli_args = CliArgs::parse();
 
         /* Initialize global settings variables */
+        let general_config_overwrite = GeneralConfigsOverwrite {
+            run_env: cli_args.run_env.clone(),
+        };
+        let general_config_overwrite = serde_json::to_string( &general_config_overwrite ).unwrap();
+
         let server_config_overwrite = ServerConfigsOverwrite {
             addr:       cli_args.addr.clone(),
             port:       cli_args.port.clone(),
@@ -102,6 +118,6 @@ mod non_wasm_ssr
         };
         let logger_config_overwrite = serde_json::to_string( &logger_config_overwrite ).unwrap();
 
-        settings::setup( server_config_overwrite, logger_config_overwrite );
+        settings::setup( general_config_overwrite, server_config_overwrite, logger_config_overwrite );
     }
 }

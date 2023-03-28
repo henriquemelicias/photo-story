@@ -11,20 +11,20 @@ pub static GENERAL: OnceCell<GeneralConfigs> = OnceCell::new();
 pub static SERVER: OnceCell<ServerConfigs> = OnceCell::new();
 pub static LOGGER: OnceCell<LoggerConfigs> = OnceCell::new();
 
-pub fn setup( server_overwrite_json: String, logger_overwrite_json: String )
+pub fn setup( general_overwrite_json: String, server_overwrite_json: String, logger_overwrite_json: String )
 {
     let dir_path = "./configs/frontend/";
     let env_prefix = "frontend_";
 
-    let runtime_env = env::var( "FRONTEND_GENERAL_RUN_ENV" ).unwrap_or( "dev".to_string() );
-    let runtime_env = RuntimeEnvironmentType::from( runtime_env.as_str() );
-
     GENERAL.set( GeneralConfigs::import(
         format!( "{}{}", dir_path, "general.toml").as_str(),
         format!( "{}{}", env_prefix, "general_" ).as_str(),
-        None,
+        Some( general_overwrite_json ),
         None,
     ) );
+
+    let runtime_env = env::var( "FRONTEND_GENERAL_RUN_ENV" ).unwrap_or( GENERAL.get().unwrap().run_env.to_string() );
+    let runtime_env = RuntimeEnvironmentType::from( runtime_env.as_str() );
 
     SERVER.set( ServerConfigs::import(
         format!( "{}{}", dir_path, "server.toml").as_str(),

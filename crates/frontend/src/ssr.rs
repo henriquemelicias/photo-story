@@ -97,11 +97,10 @@ pub struct DioxusRenderState
 
 pub async fn get_dioxus_render_state( static_dir: &str ) -> DioxusRenderState
 {
-    println!( "static_dir: {}", static_dir );
     // Get index file.
     let index_html_s = tokio::fs::read_to_string( format!( "{}/index.html", static_dir ) )
         .await
-        .expect( "Failed to read index.html" );
+        .expect( "Failed to read index.html. Did you choose the correct static directory?" );
 
     let ( index_html_prefix, index_html_suffix ) = index_html_s.split_once( r#"<div id="main">"# ).unwrap();
 

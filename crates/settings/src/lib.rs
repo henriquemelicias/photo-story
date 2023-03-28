@@ -31,7 +31,6 @@ impl From<&str> for RuntimeEnvironmentType
         match env.to_lowercase().as_str()
         {
             "production" => Self::Production,
-            "prod" => Self::Production,
             _ => Self::Development,
         }
     }

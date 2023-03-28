@@ -8,6 +8,10 @@ use serde::Serialize;
 #[clap()]
 struct CliArgs
 {
+    // Set runtime environment.
+    #[clap( short = 'e', long = "run-env" )]
+    run_env: Option<String>,
+
     /// Set the listen addr.
     #[clap( short = 'a', long = "addr" )]
     addr: Option<String>,
@@ -52,6 +56,11 @@ fn setup_settings()
     let cli_args = CliArgs::parse();
 
     /* Initialize global settings variables */
+    let general_config_overwrite = GeneralConfigsOverwrite {
+        run_env: cli_args.run_env.clone(),
+    };
+    let general_config_overwrite = serde_json::to_string( &general_config_overwrite ).unwrap();
+
     let server_config_overwrite = ServerConfigsOverwrite {
         addr:          cli_args.addr.clone(),
         port:          cli_args.port.clone(),
@@ -65,7 +74,14 @@ fn setup_settings()
     };
     let logger_config_overwrite = serde_json::to_string( &logger_config_overwrite ).unwrap();
 
-    settings::setup( server_config_overwrite, logger_config_overwrite );
+    settings::setup( general_config_overwrite, server_config_overwrite, logger_config_overwrite );
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize)]
+struct GeneralConfigsOverwrite
+{
+    run_env: Option<String>,
 }
 
 #[serde_with::skip_serializing_none]
