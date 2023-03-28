@@ -11,7 +11,8 @@ build-release:
     mkdir -p ./photo-story/static ./photo-story/logs
 
     # Build backend and static files.
-    cargo build --features ssr --profile backend-release --bin backend
+    cargo build --profile non-wasm-release --bin backend
+    cargo build --features ssr --profile non-wasm-release --bin frontend
     trunk build --release --features ssr ./crates/frontend/trunk_index.html --dist ./photo-story/static --public-url /static/
 
     # Remove assets directory on the static folder (used when using CSR).
@@ -20,7 +21,8 @@ build-release:
     # Copy necessary files to final directory.
     cp -r ./assets ./photo-story
     cp -r ./configs ./photo-story
-    cp -f ./target/backend-release/backend ./photo-story/backend
+    cp -f ./target/non-wasm-release/backend ./photo-story/backend
+    cp -f ./target/non-wasm-release/frontend ./photo-story/frontend
 
     # Optimize static files.
     find ./photo-story/static/*.wasm -exec cp {} ./target/unoptimized.wasm \; -exec wasm-snip --snip-rust-panicking-code {} -o {} \; -exec wasm-opt -Oz {} -o {} \;
@@ -167,13 +169,20 @@ magick-resize FILE WIDTH HEIGHT:
 
 # Serve frontend.
 dioxus-serve-csr PORT="5555" BACKEND_PORT="5550":
-    cd {{justfile_directory()}}/crates/frontend; dioxus serve --features csr --port {{PORT}} --hot-reload --verbose
+    cd {{justfile_directory()}}/crates/frontend; dioxus serve --features csr --port {{PORT}} --hot-reload
 
-# Run backend.
-run-backend-csr PORT="5550" STATIC_DIR="./target/static" ASSETS_DIR="./assets" DEBUG_FILTER="info" OPTION="":
+# Run frontend ssr.
+run-frontend-ssr PORT="5556" STATIC_DIR="./target/static" ASSETS_DIR="./assets" DEBUG_FILTER="info" OPTION="":
     # Stop process using same port.
     fuser -k {{PORT}}/tcp || true
-    BACKEND_GENERAL_RUN_ENV=development cargo run --bin backend {{OPTION}} -- --port {{PORT}} -s {{STATIC_DIR}} --assets-dir {{ASSETS_DIR}} -l {{DEBUG_FILTER}}
+    FRONTEND_GENERAL_RUN_ENV=development cargo run --bin frontend {{OPTION}} -- --port {{PORT}} -s {{STATIC_DIR}} --assets-dir {{ASSETS_DIR}} -l {{DEBUG_FILTER}}
+
+
+# Run backend.
+run-backend PORT="5555" FRONTEND_ADDR="127.0.0.1" FRONTEND_PORT="5556" DEBUG_FILTER="info" OPTION="":
+    # Stop process using same port.
+    fuser -k {{PORT}}/tcp || true
+    BACKEND_GENERAL_RUN_ENV=development cargo run --bin backend {{OPTION}} -- --port {{PORT}} -l {{DEBUG_FILTER}} --frontend-addr={{FRONTEND_ADDR}} --frontend-port={{FRONTEND_PORT}}
 
 # Format using custom rustfmt.
 rustfmt:

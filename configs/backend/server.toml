@@ -1,11 +1,12 @@
 [default]
 addr = "127.0.0.1"
 port = 5555
-static_dir = "./target/static"
-assets_dir = "./assets"
+frontend_addr = "127.0.0.1"
+frontend_port = 5556
+
 
 [production]
 addr = "0.0.0.0"
 port = 9000
-static_dir = "./static"
-assets_dir = "./assets"
+frontend_addr = "0.0.0.0"
+frontend_port = 9001

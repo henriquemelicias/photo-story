@@ -1,54 +1,86 @@
-use backend::settings;
+use backend::{logger, settings};
 
 use clap::Parser;
-use smartstring::alias::String as SmartString;
+use serde::Serialize;
 
 // Command line arguments interface.
 #[derive(Parser, Debug)]
-#[clap( name = settings::GENERAL.app_name().as_str(), about = settings::GENERAL.about().as_str() )]
+#[clap()]
 struct CliArgs
 {
     /// Set the listen addr.
-    #[clap( short = 'a', long = "addr", default_value = settings::SERVER.addr().as_str() )]
-    addr: SmartString,
+    #[clap( short = 'a', long = "addr" )]
+    addr: Option<String>,
 
     /// Set the listen port.
-    #[clap( short = 'p', long = "port", default_value_t =  *settings::SERVER.port() )]
-    port: u16,
+    #[clap( short = 'p', long = "port" )]
+    port: Option<u16>,
+
+    /// Set the listen addr.
+    #[clap( long = "frontend-addr" )]
+    frontend_addr: Option<String>,
+
+    /// Set the listen port.
+    #[clap( short = 'p', long = "frontend-port" )]
+    frontend_port: Option<u16>,
 
     /// Set the log level.
     /// Possible values: trace, debug, info, warn, error.
-    #[clap( short = 'l', long = "log-level", default_value = settings::LOGGER.log_level().as_str() )]
-    log_level: SmartString,
-
-    /// Set the static files directory
-    #[clap( short = 's', long = "static-dir", default_value = settings::SERVER.static_dir().as_str() )]
-    static_dir: SmartString,
-
-    /// Set the assets files directory
-    #[clap( long = "assets-dir", default_value = settings::SERVER.assets_dir().as_str() )]
-    assets_dir: SmartString,
+    #[clap( short = 'l', long = "log-level" )]
+    log_level: Option<String>,
 }
-
-fn main() -> backend::Result<()>
+fn main()
 {
-    // Enable color_eyre.
-    color_eyre::install()?;
-
-    // Parse the command line arguments.
-    let cli_args = CliArgs::parse();
+    // Initialize global settings variables.
+    setup_settings();
 
     // Tracing logs.
-    let ( _maybe_stdio_writer_guard, _maybe_file_writer_guard ) = backend::start_logs( &cli_args.log_level );
+    let ( _maybe_stdio_writer_guard, _maybe_file_writer_guard ) =
+        logger::init( settings::LOGGER.get().unwrap().log_level.as_str() );
 
     tracing::info!( "Starting backend." );
 
-    backend::start_server(
-        &cli_args.addr,
-        cli_args.port,
-        &cli_args.static_dir,
-        &cli_args.assets_dir,
+    backend::init_server(
+        settings::SERVER.get().unwrap().addr.as_str(),
+        settings::SERVER.get().unwrap().port,
     );
+}
 
-    Ok( () )
+fn setup_settings()
+{
+    // Parse the command line arguments.
+    let cli_args = CliArgs::parse();
+
+    /* Initialize global settings variables */
+    let server_config_overwrite = ServerConfigsOverwrite {
+        addr:          cli_args.addr.clone(),
+        port:          cli_args.port.clone(),
+        frontend_addr: cli_args.frontend_addr.clone(),
+        frontend_port: cli_args.frontend_port.clone(),
+    };
+    let server_config_overwrite = serde_json::to_string( &server_config_overwrite ).unwrap();
+
+    let logger_config_overwrite = LoggerConfigsOverwrite {
+        log_level: cli_args.log_level.clone(),
+    };
+    let logger_config_overwrite = serde_json::to_string( &logger_config_overwrite ).unwrap();
+
+    settings::setup( server_config_overwrite, logger_config_overwrite );
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize)]
+struct ServerConfigsOverwrite
+{
+    addr:          Option<String>,
+    port:          Option<u16>,
+    frontend_addr: Option<String>,
+    frontend_port: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize)]
+struct LoggerConfigsOverwrite
+{
+    log_level: Option<String>,
 }

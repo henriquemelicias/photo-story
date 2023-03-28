@@ -13,10 +13,10 @@ pub static LOGGER: OnceCell<LoggerConfigs> = OnceCell::new();
 
 pub fn setup( server_overwrite_json: String, logger_overwrite_json: String )
 {
-    let dir_path = "./configs/backend/";
-    let env_prefix = "backend_";
+    let dir_path = "./configs/frontend/";
+    let env_prefix = "frontend_";
 
-    let runtime_env = env::var( "BACKEND_GENERAL_RUN_ENV" ).unwrap_or( "dev".to_string() );
+    let runtime_env = env::var( "FRONTEND_GENERAL_RUN_ENV" ).unwrap_or( "dev".to_string() );
     let runtime_env = RuntimeEnvironmentType::from( runtime_env.as_str() );
 
     GENERAL.set( GeneralConfigs::import(
@@ -25,17 +25,18 @@ pub fn setup( server_overwrite_json: String, logger_overwrite_json: String )
         None,
         None,
     ) );
+
     SERVER.set( ServerConfigs::import(
         format!( "{}{}", dir_path, "server.toml").as_str(),
         format!( "{}{}", env_prefix, "server_" ).as_str(),
         Some( server_overwrite_json ),
-        Some( &runtime_env )
+        Some( &runtime_env ),
     ) );
     LOGGER.set( LoggerConfigs::import(
         format!( "{}{}", dir_path, "logger.toml").as_str(),
         format!( "{}{}", env_prefix, "logger_" ).as_str(),
         Some( logger_overwrite_json ),
-        Some( &runtime_env ),
+        Some( &runtime_env )
     ) );
 }
 
@@ -50,10 +51,10 @@ pub struct GeneralConfigs
 #[derive(Debug, Deserialize)]
 pub struct ServerConfigs
 {
-    pub addr:          String,
-    pub port:          u16,
-    pub frontend_addr: String,
-    pub frontend_port: u16,
+    pub addr:       String,
+    pub port:       u16,
+    pub static_dir: String,
+    pub assets_dir: String,
 }
 
 #[derive(Debug, Deserialize)]
