@@ -1,17 +1,12 @@
-use axum::http::HeaderValue;
-use crate::logger;
-use crate::settings;
+use axum::{http::HeaderValue, Router};
+use tower_http::{compression::CompressionLayer, cors::CorsLayer};
 
-use axum::Router;
-use tower_http::compression::CompressionLayer;
-use tower_http::cors::CorsLayer;
-
-use crate::services::routes;
+use crate::{logger, services::routes, settings};
 
 pub async fn create() -> Router
 {
     // Main router.
-    let mut app = Router::new().nest( "/api", routes::api::create_route() );
+    let mut app = Router::new().nest( "/api/v1", routes::api::create_route() );
 
     // Http tracing logs middleware layer.
     app = logger::middleware_http_tracing( app );
@@ -26,8 +21,17 @@ pub async fn create() -> Router
     }
     else
     {
-        app = app.layer( CorsLayer::new().allow_origin(
-            format!( "http://{}:{}", settings::SERVER.get().unwrap().frontend_addr, settings::SERVER.get().unwrap().frontend_port ).parse::<HeaderValue>().unwrap() ) );
+        app = app.layer(
+            CorsLayer::new().allow_origin(
+                format!(
+                    "http://{}:{}",
+                    settings::SERVER.get().unwrap().frontend_addr,
+                    settings::SERVER.get().unwrap().frontend_port
+                )
+                .parse::<HeaderValue>()
+                .unwrap(),
+            ),
+        );
     }
 
     app

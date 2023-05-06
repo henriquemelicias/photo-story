@@ -1,7 +1,7 @@
-use backend::{logger, settings};
-
 use clap::Parser;
 use serde::Serialize;
+
+use backend::{logger, settings};
 
 // Command line arguments interface.
 #[derive(Parser, Debug)]
@@ -20,12 +20,12 @@ struct CliArgs
     #[clap( short = 'p', long = "port" )]
     port: Option<u16>,
 
-    /// Set the listen addr.
+    /// The frontend addr.
     #[clap( long = "frontend-addr" )]
     frontend_addr: Option<String>,
 
-    /// Set the listen port.
-    #[clap( short = 'p', long = "frontend-port" )]
+    /// The frontend port.
+    #[clap( long = "frontend-port" )]
     frontend_port: Option<u16>,
 
     /// Set the log level.
@@ -33,6 +33,7 @@ struct CliArgs
     #[clap( short = 'l', long = "log-level" )]
     log_level: Option<String>,
 }
+
 fn main()
 {
     // Initialize global settings variables.
@@ -74,7 +75,11 @@ fn setup_settings()
     };
     let logger_config_overwrite = serde_json::to_string( &logger_config_overwrite ).unwrap();
 
-    settings::setup( general_config_overwrite, server_config_overwrite, logger_config_overwrite );
+    settings::setup(
+        general_config_overwrite,
+        server_config_overwrite,
+        logger_config_overwrite,
+    );
 }
 
 #[serde_with::skip_serializing_none]

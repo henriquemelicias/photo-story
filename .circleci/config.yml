@@ -84,7 +84,7 @@ jobs:
       - rust-toolchain-install
       - mold-linker-install
         #- setup-sccache
-        #- restore-sccache-cache
+      #- restore-sccache-cache
       - run: cargo build
       - run: cargo clippy --fix --allow-dirty --allow-staged
       - run: mkdir test-results

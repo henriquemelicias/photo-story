@@ -68,25 +68,21 @@ docs-deps:
 docker-restart:
     sudo systemctl restart docker
 
-# Build project docker container.
-docker-build:
-    docker build -t photo-story:distroless -f Dockerfile .
+# Build project docker container for backend.
+docker-build-backend:
+    docker build -t photo-story-backend:distroless -f Dockerfile.backend .
 
-# Run docker container.
-docker-run:
-    docker run -p 9000:9000 -t photo-story:distroless
+# Run backend docker container.
+docker-run-backend:
+    docker run -p 9000:9000 -t photo-story-backend:distroless
 
-# Run docker container on host network.
-docker-run-host:
-    docker run --network=host -p 9000:9000 -t photo-story:distroless
+# Build project docker container for frontend.
+docker-build-frontend:
+    docker build -t photo-story-frontend:distroless -f Dockerfile.frontend .
 
-# Docker compose up.
-docker-compose-up:
-    docker-compose up
-
-# Docker compose down.
-docker-compose-down:
-    docker-compose down
+# Run backend docker container.
+docker-run-frontend:
+    docker run -p 9001:9001 -t photo-story-frontend:distroless
 
 # Docker kill all running containers.
 docker-kill-all:

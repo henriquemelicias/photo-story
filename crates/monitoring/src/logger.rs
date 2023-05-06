@@ -19,12 +19,13 @@
 //! );
 //! ```
 
+use std::time::Duration;
+
 use axum::{
     body::{Body, BoxBody, Bytes},
     http::{HeaderMap, Request, Response},
     Router,
 };
-use std::time::Duration;
 use tower_http::{classify::ServerErrorsFailureClass, trace as http_trace};
 pub use tracing::Level;
 use tracing::Span;

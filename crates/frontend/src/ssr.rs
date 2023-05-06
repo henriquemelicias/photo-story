@@ -1,26 +1,34 @@
-use crate::settings;
+use std::{
+    convert::Infallible,
+    error::Error,
+    net::{IpAddr, Ipv6Addr, SocketAddr},
+    str::FromStr,
+};
 
 use axum::{
-    body::{Body, StreamBody},
+    body,
+    body::{Body, BoxBody, StreamBody},
     extract::State,
     handler::Handler,
-    http::Request,
+    http::{Method, Request, Response, StatusCode},
     response::IntoResponse,
-    routing::get_service,
+    routing::{get, get_service},
     Router,
 };
 use dioxus::prelude::*;
 use futures::{stream, StreamExt};
-use std::{
-    convert::Infallible,
-    net::{IpAddr, Ipv6Addr, SocketAddr},
-    str::FromStr,
+use hyper::{client::HttpConnector, upgrade::Upgraded, Uri};
+use once_cell::sync::Lazy;
+use tower::ServiceExt;
+use tower_http::{
+    compression::CompressionLayer,
+    cors::CorsLayer,
+    services::{ServeDir, ServeFile},
 };
-use std::error::Error;
-use tower_http::compression::CompressionLayer;
-use tower_http::cors::CorsLayer;
-use tower_http::services::{ServeDir, ServeFile};
 
+use crate::settings;
+
+type Client = hyper::client::Client<HttpConnector, Body>;
 
 #[tokio::main]
 pub async fn init_server( addr: &str, port: u16 ) -> Result<(), Box<dyn Error>>
@@ -40,21 +48,31 @@ pub async fn init_server( addr: &str, port: u16 ) -> Result<(), Box<dyn Error>>
         .await
         .expect( "Unable to start server" );
 
-    Ok(())
+    Ok( () )
 }
 
-pub async fn app_create() -> Option<Router>
+async fn app_create() -> Option<Router>
 {
     // Main router.
     let mut app = Router::new();
 
+    /* Api router */
+    let client = hyper::Client::builder().build( HttpConnector::new() );
+
+    let api_router = Router::new().fallback( api_reverse_proxy_handler ).with_state( client );
+    app = app.nest( "/api", api_router );
+
     // Robot.txt file get service.
-    let robots_file =
-        get_service( ServeFile::new( format!( "{}/robots.txt", settings::SERVER.get()?.assets_dir ) ) );
+    let robots_file = get_service( ServeFile::new( format!(
+        "{}/robots.txt",
+        settings::SERVER.get()?.assets_dir
+    ) ) );
 
     // Favicon.ico file get service.
-    let favicon_file =
-        get_service( ServeFile::new( format!( "{}/favicon.ico", settings::SERVER.get()?.assets_dir ) ) );
+    let favicon_file = get_service( ServeFile::new( format!(
+        "{}/favicon.ico",
+        settings::SERVER.get()?.assets_dir
+    ) ) );
 
     // Static files directory get service.
     let serve_static_dir =
@@ -88,14 +106,27 @@ pub async fn app_create() -> Option<Router>
     Some( app )
 }
 
+async fn api_reverse_proxy_handler( State( client ): State<Client>, mut req: Request<Body> )
+    -> axum::response::Response
+{
+    let path = req.uri().path();
+    let path_query = req.uri().path_and_query().map( |v| v.as_str() ).unwrap_or( path );
+
+    let uri = format!( "{}/api{}", settings::SERVER.get().unwrap().proxy_url, path_query );
+
+    *req.uri_mut() = Uri::try_from( uri ).unwrap();
+
+    client.request( req ).await.unwrap().into_response()
+}
+
 #[derive(Clone)]
-pub struct DioxusRenderState
+struct DioxusRenderState
 {
     index_html_prefix: String,
     index_html_suffix: String,
 }
 
-pub async fn get_dioxus_render_state( static_dir: &str ) -> DioxusRenderState
+async fn get_dioxus_render_state( static_dir: &str ) -> DioxusRenderState
 {
     // Get index file.
     let index_html_s = tokio::fs::read_to_string( format!( "{}/index.html", static_dir ) )
@@ -115,8 +146,7 @@ pub async fn get_dioxus_render_state( static_dir: &str ) -> DioxusRenderState
     }
 }
 
-pub async fn dioxus_render_endpoint( State( state ): State<DioxusRenderState>, _req: Request<Body> )
-                                     -> impl IntoResponse
+async fn dioxus_render_endpoint( State( state ): State<DioxusRenderState>, _req: Request<Body> ) -> impl IntoResponse
 {
     let mut app_vdom = VirtualDom::new( crate::ComponentApp );
     let _ = app_vdom.rebuild();

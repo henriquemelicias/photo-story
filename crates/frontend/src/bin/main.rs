@@ -19,7 +19,10 @@ fn main() -> Result<(), Box<dyn Error>>
 
             tracing::info!( "Starting frontend." );
 
-            frontend::ssr::init_server( &settings::SERVER.get().unwrap().addr, settings::SERVER.get().unwrap().port )?;
+            frontend::ssr::init_server(
+                &settings::SERVER.get().unwrap().addr,
+                settings::SERVER.get().unwrap().port,
+            )?;
         }
     }
 
@@ -27,17 +30,17 @@ fn main() -> Result<(), Box<dyn Error>>
     #[cfg( target_arch = "wasm32" )]
     dioxus_web::launch( frontend::ComponentApp );
 
-    Ok(())
+    Ok( () )
 }
 
 #[cfg( feature = "ssr" )]
 #[cfg( not( target_arch = "wasm32" ) )]
 mod non_wasm_ssr
 {
-    use frontend::settings;
-
     use clap::Parser;
     use serde::Serialize;
+
+    use frontend::settings;
 
     // Command line arguments interface.
     #[derive(Parser, Debug)]
@@ -55,6 +58,10 @@ mod non_wasm_ssr
         /// Set the listen port.
         #[clap( short = 'p', long = "port" )]
         port: Option<u16>,
+
+        /// Set the listen port.
+        #[clap( long = "proxy-url" )]
+        proxy_url: Option<String>,
 
         /// Set the log level.
         /// Possible values: trace, debug, info, warn, error.
@@ -83,6 +90,7 @@ mod non_wasm_ssr
     {
         addr:       Option<String>,
         port:       Option<u16>,
+        proxy_url:  Option<String>,
         static_dir: Option<String>,
         assets_dir: Option<String>,
     }
@@ -108,6 +116,7 @@ mod non_wasm_ssr
         let server_config_overwrite = ServerConfigsOverwrite {
             addr:       cli_args.addr.clone(),
             port:       cli_args.port.clone(),
+            proxy_url:  cli_args.proxy_url.clone(),
             static_dir: cli_args.static_dir.clone(),
             assets_dir: cli_args.assets_dir.clone(),
         };
@@ -118,6 +127,10 @@ mod non_wasm_ssr
         };
         let logger_config_overwrite = serde_json::to_string( &logger_config_overwrite ).unwrap();
 
-        settings::setup( general_config_overwrite, server_config_overwrite, logger_config_overwrite );
+        settings::setup(
+            general_config_overwrite,
+            server_config_overwrite,
+            logger_config_overwrite,
+        );
     }
 }

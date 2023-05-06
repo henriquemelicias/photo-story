@@ -4,6 +4,11 @@
 #![warn( clippy::complexity )]
 #![warn( clippy::perf )]
 
+use std::{
+    net::{IpAddr, Ipv6Addr, SocketAddr},
+    str::FromStr,
+};
+
 pub mod logger;
 pub mod settings;
 
@@ -16,11 +21,6 @@ mod features;
 mod infrastructure;
 mod services;
 mod utils;
-
-use std::{
-    net::{IpAddr, Ipv6Addr, SocketAddr},
-    str::FromStr,
-};
 
 #[tokio::main]
 pub async fn init_server( addr: &str, port: u16 )

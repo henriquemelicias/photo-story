@@ -1,11 +1,11 @@
 #![allow( unused )]
 
-use std::env;
-use settings::{ImportFigment, RuntimeEnvironmentType};
-use std::sync::Mutex;
+use std::{env, sync::Mutex};
 
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
+
+use settings::{ImportFigment, RuntimeEnvironmentType};
 
 pub static GENERAL: OnceCell<GeneralConfigs> = OnceCell::new();
 pub static SERVER: OnceCell<ServerConfigs> = OnceCell::new();
@@ -17,7 +17,7 @@ pub fn setup( general_overwrite_json: String, server_overwrite_json: String, log
     let env_prefix = "frontend_";
 
     GENERAL.set( GeneralConfigs::import(
-        format!( "{}{}", dir_path, "general.toml").as_str(),
+        format!( "{}{}", dir_path, "general.toml" ).as_str(),
         format!( "{}{}", env_prefix, "general_" ).as_str(),
         Some( general_overwrite_json ),
         None,
@@ -27,16 +27,16 @@ pub fn setup( general_overwrite_json: String, server_overwrite_json: String, log
     let runtime_env = RuntimeEnvironmentType::from( runtime_env.as_str() );
 
     SERVER.set( ServerConfigs::import(
-        format!( "{}{}", dir_path, "server.toml").as_str(),
+        format!( "{}{}", dir_path, "server.toml" ).as_str(),
         format!( "{}{}", env_prefix, "server_" ).as_str(),
         Some( server_overwrite_json ),
         Some( &runtime_env ),
     ) );
     LOGGER.set( LoggerConfigs::import(
-        format!( "{}{}", dir_path, "logger.toml").as_str(),
+        format!( "{}{}", dir_path, "logger.toml" ).as_str(),
         format!( "{}{}", env_prefix, "logger_" ).as_str(),
         Some( logger_overwrite_json ),
-        Some( &runtime_env )
+        Some( &runtime_env ),
     ) );
 }
 
@@ -53,6 +53,7 @@ pub struct ServerConfigs
 {
     pub addr:       String,
     pub port:       u16,
+    pub proxy_url:  String,
     pub static_dir: String,
     pub assets_dir: String,
 }
@@ -68,5 +69,7 @@ pub struct LoggerConfigs
 }
 
 impl ImportFigment<Self> for GeneralConfigs {}
+
 impl ImportFigment<Self> for ServerConfigs {}
+
 impl ImportFigment<Self> for LoggerConfigs {}

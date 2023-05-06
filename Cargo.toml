@@ -4,7 +4,6 @@ members = [
     "crates/backend",
     "crates/frontend",
     "crates/common",
-
     # Utils.
     "crates/monitoring",
     "crates/settings",

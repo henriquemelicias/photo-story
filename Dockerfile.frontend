@@ -15,7 +15,7 @@ RUN apt-get update \
 
 ENV CARGO_TERM_COLOR always
 
-WORKDIR /photo-story
+WORKDIR /build_dir
 
 # Install mold.
 RUN wget https://github.com/rui314/mold/releases/download/v1.7.1/mold-1.7.1-x86_64-linux.tar.gz \
@@ -47,7 +47,9 @@ FROM frolvlad/alpine-glibc:glibc-2.34
 
 WORKDIR /photo-story
 
-COPY --from=builder /photo-story/photo-story ./
+COPY --from=builder /build_dir/photo-story/assets ./assets
+COPY --from=builder /build_dir/photo-story/static ./static
+COPY --from=builder /build_dir/photo-story/configs/frontend ./configs/frontend
+COPY --from=builder /build_dir/photo-story/frontend ./
 
-ENV BACKEND_GENERAL_RUN_ENV=production
-ENTRYPOINT ["/photo-story/backend", "--static-dir", "./static"]
+ENTRYPOINT ["/photo-story/frontend", "-e", "production"]

@@ -1,12 +1,17 @@
 scrape_configs:
-  - job_name: "photo-story"
+  - job_name: "photo-story-backend"
     scrape_interval: 5s
     static_configs:
-      - targets: ["photo-story:9000"]
+      - targets: [ "photo-story-backend:9000" ]
+
+  - job_name: "photo-story-frontend"
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ "photo-story-frontend:9001" ]
 
   - job_name: cadvisor
     static_configs:
-      - targets: ["cadvisor:8080"]
+      - targets: [ "cadvisor:8080" ]
 
 rule_files:
   - "rules.yml"
@@ -14,4 +19,4 @@ rule_files:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: ["alertmanager:9093"]
+        - targets: [ "alertmanager:9093" ]

@@ -1,9 +1,9 @@
-pub use logger::middleware_http_tracing;
+use std::str::FromStr;
 
-use crate::settings;
+pub use logger::middleware_http_tracing;
 use monitoring::logger;
 
-use std::str::FromStr;
+use crate::settings;
 
 pub fn init( log_level: &str ) -> ( Option<logger::WorkerGuard>, Option<logger::WorkerGuard> )
 {

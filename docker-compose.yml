@@ -1,16 +1,30 @@
 version: "3.9"
 services:
-  photo-story:
-    image: photo-story:distroless
-    container_name: photo-story
+  photo-story-backend:
+    image: photo-story-backend:distroless
+    container_name: photo-story-backend
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
     restart: always
     volumes:
       - ./logs:/photo-story/logs
     ports:
       - "9000:9000"
+    networks:
+      - local
+
+  photo-story-frontend:
+    image: photo-story-frontend:distroless
+    container_name: photo-story-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: always
+    volumes:
+      - ./logs:/photo-story/logs
+    ports:
+      - "9001:9001"
     networks:
       - local
 
@@ -85,7 +99,8 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
-    restart: always
+    restart: unless-stopped
+    privileged: true
     ports:
       - "8080:8080"
     volumes:
@@ -93,6 +108,7 @@ services:
       - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
     networks:
       - local
 
