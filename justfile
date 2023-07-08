@@ -4,53 +4,61 @@
 _default:
     @just --list
 
+# Env variables.
+export TRUNK_CONFIG := "./Trunk.toml"
+
+# Variables.
+BUILD_DIR := "./build"
+
 # Build backend and frontend for release.
 build-release:
+    #!/bin/bash
+
+    BUILD_DIR={{BUILD_DIR}}
+    STATIC_DIR=$BUILD_DIR/static
+
     # Create new final directory.
-    rm -rf ./photo-story
-    mkdir -p ./photo-story/static ./photo-story/logs
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR/static $BUILD_DIR/logs
 
     # Build backend and static files.
     cargo build --profile non-wasm-release --bin backend
     cargo build --features ssr --profile non-wasm-release --bin frontend
-    trunk build --release --features ssr ./crates/frontend/trunk_index.html --dist ./photo-story/static --public-url /static/
+    trunk build --release --features ssr ./crates/frontend/trunk_index.html --dist $STATIC_DIR --public-url /static/
 
     # Remove assets directory on the static folder (used when using CSR).
-    rm -r ./photo-story/static/assets
+    rm -r $STATIC_DIR/assets
 
     # Copy necessary files to final directory.
-    cp -r ./assets ./photo-story
-    cp -r ./configs ./photo-story
-    cp -f ./target/non-wasm-release/backend ./photo-story/backend
-    cp -f ./target/non-wasm-release/frontend ./photo-story/frontend
+    cp -r ./assets $BUILD_DIR
+    cp -r ./configs $BUILD_DIR
+    cp -f ./target/non-wasm-release/backend $BUILD_DIR/backend
+    cp -f ./target/non-wasm-release/frontend $BUILD_DIR/frontend
 
     # Optimize static files.
-    find ./photo-story/static/*.wasm -exec cp {} ./target/unoptimized.wasm \; -exec wasm-snip --snip-rust-panicking-code {} -o {} \; -exec wasm-opt -Oz {} -o {} \;
-    find ./photo-story/static/*.js -exec npx terser {} -c -m --output {} \;
-    find ./photo-story/static/snippets/**/*.js -exec npx terser {} -c -m --output {} \;
-    find ./photo-story/static/*.css -exec npx csso {} --comments none --output {} \;
-    # npx critical --b test -c tailwind-base*.css -w 320 -h 480 ./photo-story/static/index.html -i > ./photo-story/static/index.html
+    find $STATIC_DIR/*.wasm -exec cp {} ./target/unoptimized.wasm \; -exec wasm-snip --snip-rust-panicking-code {} -o {} \; -exec wasm-opt -Oz {} -o {} \;
+    find $STATIC_DIR/*.js -exec npx terser {} -c -m --output {} \;
+    find $STATIC_DIR/snippets/**/*.js -exec npx terser {} -c -m --output {} \;
+    find $STATIC_DIR/*.css -exec npx csso {} --comments none --output {} \;
+    # npx critical --b test -c tailwind-base*.css -w 320 -h 480 $STATIC_DIR/index.html -i > $STATIC_DIR/index.html
 
     # Compress static files.
-    npx brotli-cli compress -q 11 --glob --bail false ./photo-story/static/*.wasm || true
-    npx brotli-cli compress -q 11 --glob --bail false ./photo-story/static/*.js || true
-    npx brotli-cli compress -q 11 --glob --bail false ./photo-story/static/snippets/**/*.js || true
-    npx brotli-cli compress -q 11 --glob --bail false ./photo-story/static/*.css || true
-
-    # Compress assets.
-    npx brotli-cli compress -q 11 --glob --bail false ./photo-story/assets/**/* || true
+    npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.wasm || true
+    npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.js || true
+    npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/snippets/**/*.js || true
+    npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.css || true
 
     # Build finished.
 
 # Cleans the project.
 clean:
-    rm -rf ./photo-story ./node_modules ./crates/frontend/styles/dist
+    rm -rf {{BUILD_DIR}} ./node_modules ./crates/frontend/styles/dist
     cargo clean
     trunk clean
 
 # Cleans the logs.
 clean-logs:
-    rm ./logs/*
+    rm -f ./logs/*
 
 # Runs clippy on the sources.
 check:
@@ -63,30 +71,6 @@ docs:
 # Builds and opens documentation in-browser with the dependencies docs.
 docs-deps:
     cargo doc --open
-
-# Restart docker service.
-docker-restart:
-    sudo systemctl restart docker
-
-# Build project docker container for backend.
-docker-build-backend:
-    docker build -t photo-story-backend:distroless -f Dockerfile.backend .
-
-# Run backend docker container.
-docker-run-backend:
-    docker run -p 9000:9000 -t photo-story-backend:distroless
-
-# Build project docker container for frontend.
-docker-build-frontend:
-    docker build -t photo-story-frontend:distroless -f Dockerfile.frontend .
-
-# Run backend docker container.
-docker-run-frontend:
-    docker run -p 9001:9001 -t photo-story-frontend:distroless
-
-# Docker kill all running containers.
-docker-kill-all:
-    docker kill $(docker ps -qa)
 
 # Expands macro in file and outputs it to console.
 expand-macro FILE:
@@ -116,18 +100,6 @@ install-init-dev:
     just install-udeps
     rustup target add wasm32-unknown-unknown
 
-# Install Loki Docker Driver plugin to monitor containers.
-install-loki-docker-driver:
-    docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
-    sudo cp ./monitoring/loki/daemon.json /etc/docker/daemon.json
-    sudo systemctl restart docker
-
-# Uninstall Loki Docker Driver plugin.
-uninstall-loki-docker-driver:
-    docker plugin disable loki
-    docker plugin rm loki
-    sudo rm /etc/docker/daemon.json
-    sudo systemctl restart docker
 
 # Install mold linker for faster compilation linker.
 install-mold-linker:
@@ -144,24 +116,9 @@ install-mold-linker:
 install-udeps:
     cargo install cargo-udeps --locked
 
-# Convert image in the current directory to the webp format using ImageMagick. Recommended: 50 or 80.
-magick-img-to-webp FILE QUALITY="50":
-    FILENAME={{FILE}} && \
-    FILENAME=$(echo "${FILENAME%.*}") && \
-    magick {{invocation_directory()}}/{{FILE}} -quality {{QUALITY}} -define webp:method=6 {{invocation_directory()}}/$FILENAME-q{{QUALITY}}.webp
-
-# Convert image in the current directory to the avif format using ImageMagick. Recommended: 50 or 75.
-magick-img-to-avif FILE QUALITY="50":
-    FILENAME={{FILE}} && \
-    FILENAME=$(echo "${FILENAME%.*}") && \
-    magick {{invocation_directory()}}/{{FILE}} -quality {{QUALITY}} -define heic:speed=2 {{invocation_directory()}}/$FILENAME-q{{QUALITY}}.avif
-
-# Resize image.
-magick-resize FILE WIDTH HEIGHT:
-    FILENAME={{FILE}} && \
-    EXTENSION="${FILENAME##*.}" && \
-    FILENAME=$(echo "${FILENAME%.*}") && \
-    magick {{invocation_directory()}}/{{FILE}} -resize {{WIDTH}}x{{HEIGHT}} {{invocation_directory()}}/$FILENAME-{{WIDTH}}x{{HEIGHT}}.$EXTENSION
+# Check npm packages for updates.
+npm-check-updates:
+    npx npm-check-updates
 
 # Serve frontend.
 dioxus-serve-csr PORT="5555" BACKEND_PORT="5550":
@@ -203,29 +160,8 @@ vendor:
 _grep_toml_config FILE GROUP_ENV CONFIG_VAR:
     grep -A 100 "^\[{{GROUP_ENV}}\]" {{FILE}} | grep -m 1 -oP '^{{CONFIG_VAR}}\s?=\s?"?\K[^"?]+'
 
-_generate_tailwind_css STYLES_DIR:
-    # Generate tailwind css.
-    npx tailwindcss -i {{STYLES_DIR}}/tailwind.config.css --minify -c {{STYLES_DIR}}/tailwind.config.js -o {{STYLES_DIR}}/dist/tailwind.css
-    # Postcss tailwind css.
-    npx postcss --config {{STYLES_DIR}}/postcss.config.js {{STYLES_DIR}}/dist/tailwind.css -o {{STYLES_DIR}}/dist/tailwind-base.css
-    # Minify tailwind-base.css.
-    npx csso {{STYLES_DIR}}/dist/tailwind-base.css --comments none --output {{STYLES_DIR}}/dist/tailwind-base.css
-
-
-_add_media_to_html_link INDEX_HTML_FILE TEXT_BEFORE MEDIA:
-    sed -i -e 's+\({{TEXT_BEFORE}}\)+\1 {{MEDIA}}+g' {{INDEX_HTML_FILE}}
-
-_update_index_html FILE:
-    just _add_media_to_html_link {{FILE}} "tailwind-min-width-640-px.*\.css\"" "media=\"screen and (min-width:640px)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-min-width-768-px.*\.css\"" "media=\"screen and (min-width:768px)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-min-width-1024-px.*\.css\"" "media=\"screen and (min-width:1024px)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-min-width-1280-px.*\.css\"" "media=\"screen and (min-width:1280px)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-min-width-1536-px.*\.css\"" "media=\"screen and (min-width:1536px)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-min-width-48-rem.*\.css\"" "media=\"print\""
-    just _add_media_to_html_link {{FILE}} "tailwind-prefers-color-scheme-dark.*\.css\"" "media=\"(prefers-color-scheme:dark)\""
-
 _format_tailwindcss:
-    #!/usr/bin/env sh
+    #!/bin/bash
     FILES=$(find -type f -path "./crates/frontend/*" -path "*.rs" | xargs grep -il -E 'html!\s?{') && \
 
     # Cycle through each file that contains an html! macro.
@@ -251,3 +187,25 @@ _format_tailwindcss:
 
         unset IFS
     done
+
+_generate_tailwind_css STYLES_DIR:
+    # Generate tailwind css.
+    npx tailwindcss -i {{STYLES_DIR}}/tailwind.config.css --minify -c {{STYLES_DIR}}/tailwind.config.js -o {{STYLES_DIR}}/dist/tailwind.css
+    # Postcss tailwind css.
+    npx postcss --config {{STYLES_DIR}}/postcss.config.js {{STYLES_DIR}}/dist/tailwind.css -o {{STYLES_DIR}}/dist/tailwind-base.css
+    # Minify tailwind-base.css.
+    npx csso {{STYLES_DIR}}/dist/tailwind-base.css --comments none --output {{STYLES_DIR}}/dist/tailwind-base.css
+
+_add_media_to_html_link INDEX_HTML_FILE TEXT_BEFORE MEDIA:
+    sed -i -e 's+\({{TEXT_BEFORE}}\)+\1 {{MEDIA}}+g' {{INDEX_HTML_FILE}}
+
+_update_index_html FILE:
+    #just _add_media_to_html_link {{FILE}} "tailwind-min-width-640-px.*\.css\"" "media=\"screen and (min-width:640px)\""
+    #just _add_media_to_html_link {{FILE}} "tailwind-min-width-768-px.*\.css\"" "media=\"screen and (min-width:768px)\""
+    just _add_media_to_html_link {{FILE}} "tailwind-min-width-1024-px.*\.css\"" "media=\"screen and (min-width:1024px)\""
+    #just _add_media_to_html_link {{FILE}} "tailwind-min-width-1280-px.*\.css\"" "media=\"screen and (min-width:1280px)\""
+    #just _add_media_to_html_link {{FILE}} "tailwind-min-width-1536-px.*\.css\"" "media=\"screen and (min-width:1536px)\""
+    just _add_media_to_html_link {{FILE}} "tailwind-min-width-48-rem.*\.css\"" "media=\"print\""
+    just _add_media_to_html_link {{FILE}} "tailwind-prefers-color-scheme-dark.*\.css\"" "media=\"(prefers-color-scheme:dark)\""
+    just _add_media_to_html_link {{FILE}} "tailwind-prefers-reduced-motion-reduce.*\.css\"" "media=\"(prefers-reduced-motion:reduce)\""
+    just _add_media_to_html_link {{FILE}} "tailwind-hover.*\.css\"" "media=\"(hover:hover)\""

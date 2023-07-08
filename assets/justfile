@@ -1,0 +1,29 @@
+#!/usr/bin/env just --justfile
+
+_default:
+    @just --list
+
+# Compress assets within PATH.
+compress-brotli PATH="./images/**/*":
+    # Compress assets.
+    npx brotli-cli compress -q 11 --glob --bail false {{PATH}} || true
+
+# Convert image in the current directory to the webp format using ImageMagick. Recommended: 50 or 80.
+magick-img-to-webp FILE QUALITY="50":
+    FILENAME={{FILE}} && \
+    FILENAME=$(echo "${FILENAME%.*}") && \
+    magick {{invocation_directory()}}/{{FILE}} -quality {{QUALITY}} -define webp:method=6 {{invocation_directory()}}/$FILENAME-q{{QUALITY}}.webp
+
+# Convert image in the current directory to the avif format using ImageMagick. Recommended: 50 or 75.
+magick-img-to-avif FILE QUALITY="50":
+    FILENAME={{FILE}} && \
+    FILENAME=$(echo "${FILENAME%.*}") && \
+    magick {{invocation_directory()}}/{{FILE}} -quality {{QUALITY}} -define heic:speed=2 {{invocation_directory()}}/$FILENAME-q{{QUALITY}}.avif
+
+# Resize image.
+magick-resize FILE WIDTH HEIGHT:
+    FILENAME={{FILE}} && \
+    EXTENSION="${FILENAME##*.}" && \
+    FILENAME=$(echo "${FILENAME%.*}") && \
+    magick {{invocation_directory()}}/{{FILE}} -resize {{WIDTH}}x{{HEIGHT}} {{invocation_directory()}}/$FILENAME-{{WIDTH}}x{{HEIGHT}}.$EXTENSION
+

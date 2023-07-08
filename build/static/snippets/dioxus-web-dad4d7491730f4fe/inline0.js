@@ -1,0 +1,1 @@
+export function get_form_data(t){let e=new Map;const o=new FormData(t);for(let t of o.keys())e.set(t,o.getAll(t));return e}

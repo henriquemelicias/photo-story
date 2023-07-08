@@ -1,0 +1,13 @@
+[default]
+addr = "127.0.0.1"
+port = 9001
+proxy_url = "http://127.0.0.1:9000"
+static_dir = "./target/static"
+assets_dir = "./assets"
+
+[production]
+addr = "0.0.0.0"
+port = 9001
+proxy_url = "http://0.0.0.0:9000"
+static_dir = "./static"
+assets_dir = "./assets"

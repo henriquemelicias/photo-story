@@ -1,0 +1,41 @@
+#!/usr/bin/env just --justfile
+
+_default:
+    @just --list
+
+# Restart docker service.
+docker-restart:
+    sudo systemctl restart docker
+
+# Build project docker container for backend.
+docker-build-backend:
+    docker build -t photo-story-backend:distroless -f Dockerfile.backend .
+
+# Run backend docker container.
+docker-run-backend:
+    docker run -p 9000:9000 -t photo-story-backend:distroless
+
+# Build project docker container for frontend.
+docker-build-frontend:
+    docker build -t photo-story-frontend:distroless -f Dockerfile.frontend .
+
+# Run backend docker container.
+docker-run-frontend:
+    docker run -p 9001:9001 -t photo-story-frontend:distroless
+
+# Docker kill all running containers.
+docker-kill-all:
+    docker kill $(docker ps -qa)
+
+# Install Loki Docker Driver plugin to monitor containers.
+install-loki-docker-driver:
+    docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+    sudo cp ../monitoring/loki/daemon.json /etc/docker/daemon.json
+    sudo systemctl restart docker
+
+# Uninstall Loki Docker Driver plugin.
+uninstall-loki-docker-driver:
+    docker plugin disable loki
+    docker plugin rm loki
+    sudo rm /etc/docker/daemon.json
+    sudo systemctl restart docker
