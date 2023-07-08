@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 
+#[must_use]
 pub fn ComponentHeader( cx: Scope ) -> Element
 {
     cx.render( rsx!(

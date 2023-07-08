@@ -64,9 +64,9 @@ fn setup_settings()
 
     let server_config_overwrite = ServerConfigsOverwrite {
         addr:          cli_args.addr.clone(),
-        port:          cli_args.port.clone(),
+        port:          cli_args.port,
         frontend_addr: cli_args.frontend_addr.clone(),
-        frontend_port: cli_args.frontend_port.clone(),
+        frontend_port: cli_args.frontend_port,
     };
     let server_config_overwrite = serde_json::to_string( &server_config_overwrite ).unwrap();
 

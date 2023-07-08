@@ -35,20 +35,22 @@ build-release:
     cp -f ./target/non-wasm-release/backend $BUILD_DIR/backend
     cp -f ./target/non-wasm-release/frontend $BUILD_DIR/frontend
 
-    # Optimize static files.
+    # Optimize static files
     find $STATIC_DIR/*.wasm -exec cp {} ./target/unoptimized.wasm \; -exec wasm-snip --snip-rust-panicking-code {} -o {} \; -exec wasm-opt -Oz {} -o {} \;
     find $STATIC_DIR/*.js -exec npx terser {} -c -m --output {} \;
     find $STATIC_DIR/snippets/**/*.js -exec npx terser {} -c -m --output {} \;
     find $STATIC_DIR/*.css -exec npx csso {} --comments none --output {} \;
     # npx critical --b test -c tailwind-base*.css -w 320 -h 480 $STATIC_DIR/index.html -i > $STATIC_DIR/index.html
 
-    # Compress static files.
+    echo "Compress wasm:"
     npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.wasm || true
+    echo "Compress js and snippets js:"
     npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.js || true
     npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/snippets/**/*.js || true
+    echo "Compress css:"
     npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.css || true
 
-    # Build finished.
+    echo "Build finished."
 
 # Cleans the project.
 clean:
@@ -100,7 +102,6 @@ install-init-dev:
     just install-udeps
     rustup target add wasm32-unknown-unknown
 
-
 # Install mold linker for faster compilation linker.
 install-mold-linker:
     rm -rf mold
@@ -118,7 +119,7 @@ install-udeps:
 
 # Check npm packages for updates.
 npm-check-updates:
-    npx npm-check-updates
+    npx npm-check-updates -u
 
 # Serve frontend.
 dioxus-serve-csr PORT="5555" BACKEND_PORT="5550":
@@ -153,10 +154,6 @@ test PACKAGE:
 udeps:
     cargo +nightly udeps --all-targets
 
-# Vendor all dependencies locally.
-vendor:
-    cargo vendor
-
 _grep_toml_config FILE GROUP_ENV CONFIG_VAR:
     grep -A 100 "^\[{{GROUP_ENV}}\]" {{FILE}} | grep -m 1 -oP '^{{CONFIG_VAR}}\s?=\s?"?\K[^"?]+'
 
@@ -187,25 +184,3 @@ _format_tailwindcss:
 
         unset IFS
     done
-
-_generate_tailwind_css STYLES_DIR:
-    # Generate tailwind css.
-    npx tailwindcss -i {{STYLES_DIR}}/tailwind.config.css --minify -c {{STYLES_DIR}}/tailwind.config.js -o {{STYLES_DIR}}/dist/tailwind.css
-    # Postcss tailwind css.
-    npx postcss --config {{STYLES_DIR}}/postcss.config.js {{STYLES_DIR}}/dist/tailwind.css -o {{STYLES_DIR}}/dist/tailwind-base.css
-    # Minify tailwind-base.css.
-    npx csso {{STYLES_DIR}}/dist/tailwind-base.css --comments none --output {{STYLES_DIR}}/dist/tailwind-base.css
-
-_add_media_to_html_link INDEX_HTML_FILE TEXT_BEFORE MEDIA:
-    sed -i -e 's+\({{TEXT_BEFORE}}\)+\1 {{MEDIA}}+g' {{INDEX_HTML_FILE}}
-
-_update_index_html FILE:
-    #just _add_media_to_html_link {{FILE}} "tailwind-min-width-640-px.*\.css\"" "media=\"screen and (min-width:640px)\""
-    #just _add_media_to_html_link {{FILE}} "tailwind-min-width-768-px.*\.css\"" "media=\"screen and (min-width:768px)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-min-width-1024-px.*\.css\"" "media=\"screen and (min-width:1024px)\""
-    #just _add_media_to_html_link {{FILE}} "tailwind-min-width-1280-px.*\.css\"" "media=\"screen and (min-width:1280px)\""
-    #just _add_media_to_html_link {{FILE}} "tailwind-min-width-1536-px.*\.css\"" "media=\"screen and (min-width:1536px)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-min-width-48-rem.*\.css\"" "media=\"print\""
-    just _add_media_to_html_link {{FILE}} "tailwind-prefers-color-scheme-dark.*\.css\"" "media=\"(prefers-color-scheme:dark)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-prefers-reduced-motion-reduce.*\.css\"" "media=\"(prefers-reduced-motion:reduce)\""
-    just _add_media_to_html_link {{FILE}} "tailwind-hover.*\.css\"" "media=\"(hover:hover)\""

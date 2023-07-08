@@ -24,7 +24,7 @@ stage = "pre_build"
 command = "sh"
 command_arguments = [
     "-c",
-    "just -f $TRUNK_SOURCE_DIR/justfile _generate_tailwind_css ./styles"
+    "just -f $TRUNK_SOURCE_DIR/justfile generate_tailwind_css ./styles"
 ]
 
 [[hooks]]
@@ -32,5 +32,5 @@ stage = "post_build"
 command = "sh"
 command_arguments = [
     "-c",
-    "just -f $TRUNK_SOURCE_DIR/justfile _update_index_html $TRUNK_STAGING_DIR/index.html"
+    "just -f $TRUNK_SOURCE_DIR/justfile post_update_index_html $TRUNK_STAGING_DIR/index.html"
 ]

@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 
+#[must_use]
 pub fn ComponentFooter( cx: Scope ) -> Element { cx.render( rsx!( FooterTop {} ) ) }
 
 fn FooterTop( cx: Scope ) -> Element

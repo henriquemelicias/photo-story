@@ -132,7 +132,6 @@ pub fn init(
     ( guard_io_writer, guard_file_writer )
 }
 
-#[must_use]
 pub fn middleware_http_tracing( router: Router ) -> Router
 {
     let trace_layer = http_trace::TraceLayer::new_for_http()

@@ -3,6 +3,7 @@
 use dioxus::prelude::*;
 use dioxus_router::{Link, Route, Router};
 
+#[must_use]
 pub fn ComponentRouter( cx: Scope ) -> Element
 {
     cx.render( rsx!(
