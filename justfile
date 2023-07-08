@@ -31,6 +31,7 @@ build-release:
 
     # Copy necessary files to final directory.
     cp -r ./assets $BUILD_DIR
+    rm $BUILD_DIR/assets/justfile
     cp -r ./configs $BUILD_DIR
     cp -f ./target/non-wasm-release/backend $BUILD_DIR/backend
     cp -f ./target/non-wasm-release/frontend $BUILD_DIR/frontend
@@ -159,24 +160,27 @@ _grep_toml_config FILE GROUP_ENV CONFIG_VAR:
 
 _format_tailwindcss:
     #!/bin/bash
-    FILES=$(find -type f -path "./crates/frontend/*" -path "*.rs" | xargs grep -il -E 'html!\s?{') && \
+    FILES=$(find -type f -path "./crates/frontend/*" -path "*.rs" | xargs grep -il -E 'rsx!\s?\(') && \
 
     # Cycle through each file that contains an html! macro.
     for FILE in $FILES; do
+        echo "Formatting $FILE"
 
         # Get each class="..." present.
-        CLASSES=$(grep -oE 'class="[^"|(.)]*"' $FILE)
+        CLASSES=$(grep -oE 'class:\s?"[^"|(.)]*"' $FILE)
 
         IFS=$'\n' # make newlines the only separator, needs to be reset.
 
         # Cycle through each class.
         for CLASS in $CLASSES; do
 
-            # Prettify class.
-            CLASS_PRETTY=$(echo "<img $CLASS>" | prettier --plugin prettier-plugin-tailwindcss --parser html --bracket-same-line true --print-width 1000000)
+            CLASS=$(echo $CLASS | sed -E 's/class:\s?/class=/g')
 
-            # Remove extra tag.
-            CLASS_FINAL=$(echo $CLASS_PRETTY | grep -oE 'class="[^"|(.)]*"')
+            # Prettify class.
+            CLASS_PRETTY=$(echo "<img $CLASS>" | npx prettier --plugin prettier-plugin-tailwindcss --parser html --bracket-same-line true --print-width 1000000)
+
+            # Remove extra tag and transform back to class: "...".
+            CLASS_FINAL=$(echo $CLASS_PRETTY | grep -oE 'class="[^"|(.)]*"' | sed "s/class=/class: /g")
 
             # Replace in files.
             sd -s $CLASS $CLASS_FINAL $FILE

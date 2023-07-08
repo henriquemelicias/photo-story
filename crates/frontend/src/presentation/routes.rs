@@ -8,11 +8,9 @@ pub fn ComponentRouter( cx: Scope ) -> Element
 {
     cx.render( rsx!(
 
-        Router
-        {
+        Router { 
             Route { to: "/", ComponentHome {} }
             Route { to: "", ComponentNotFound {} }
-
         }
     ) )
 }
@@ -21,9 +19,7 @@ fn ComponentHome( cx: Scope ) -> Element
 {
     cx.render( rsx!(
 
-        h1
-        {
-            class: "text-9xl font-bold underline",
+        h1 { class: "text-9xl font-bold underline",
 
             "Home"
             br {}
@@ -32,10 +28,4 @@ fn ComponentHome( cx: Scope ) -> Element
     ) )
 }
 
-fn ComponentNotFound( cx: Scope ) -> Element
-{
-    cx.render( rsx!(
-
-        h1 { "404" }
-    ) )
-}
+fn ComponentNotFound( cx: Scope ) -> Element { cx.render( rsx!( h1 { "404" } ) ) }

@@ -1,8 +1,8 @@
 [default]
 addr = "127.0.0.1"
-port = 9000
+port = 5555
 frontend_addr = "127.0.0.1"
-frontend_port = 9001
+frontend_port = 5556
 
 
 [production]

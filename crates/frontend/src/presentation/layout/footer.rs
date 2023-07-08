@@ -7,8 +7,7 @@ fn FooterTop( cx: Scope ) -> Element
 {
     cx.render( rsx!(
 
-        footer {
-            class: "footer p-10 bg-base-200 text-base-content flex justify-between flex-wrap",
+        footer { class: "footer p-10 bg-base-200 text-base-content flex justify-between flex-wrap",
 
             div {
                 span { class: "footer-title", "Services" }
@@ -35,22 +34,13 @@ fn FooterTop( cx: Scope ) -> Element
 
             div {
                 span { class: "footer-title", "Newsletter" }
-                div {
-                    class: "form-control w-100",
+                div { class: "form-control w-100",
 
-                    label {
-                        class: "label",
+                    label { class: "label", span { class: "label-text", "Enter your email address" } }
 
-                        span { class: "label-text", "Enter your email address" }
-                    }
+                    div { class: "relative",
 
-                    div {
-                        class: "relative",
-
-                        input {
-                            class: "input input-bordered w-100",
-                            placeholder: "Email address",
-                        }
+                        input { class: "input input-bordered w-100", placeholder: "Email address" }
 
                         button {
                             class: "absolute btn btn-primary btn-sm",

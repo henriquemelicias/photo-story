@@ -1,4 +1,0 @@
-[default]
-app_name = "backend"
-about = "The backend server."
-run_env = "development"
