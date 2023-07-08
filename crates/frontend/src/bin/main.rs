@@ -2,11 +2,14 @@ use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>>
 {
+    // Server-side rendering.
     #[cfg( feature = "ssr" )]
     {
+        // Build the frontend.
         #[cfg( target_arch = "wasm32" )]
         dioxus_web::launch_with_props( frontend::ComponentApp, (), dioxus_web::Config::new().hydrate( true ) );
 
+        // Start the server to serve the static files.
         #[cfg( not( target_arch = "wasm32" ) )]
         {
             use frontend::settings;
@@ -26,6 +29,7 @@ fn main() -> Result<(), Box<dyn Error>>
         }
     }
 
+    // Client-side rendering.
     #[cfg( not( feature = "ssr" ) )]
     #[cfg( target_arch = "wasm32" )]
     dioxus_web::launch( frontend::ComponentApp );

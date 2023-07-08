@@ -22,7 +22,7 @@ wasm-bindgen = "0.2"
 web-sys = "0.3"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-lol_alloc = "0.3"
+lol_alloc = "0.4"
 
 [target.'cfg( not( target_arch = "wasm32" ))'.dependencies]
 monitoring = { path = "../monitoring" }
@@ -35,7 +35,7 @@ futures = "0.3"
 hyper = { version = "0.14", features = ["full"] }
 once_cell = "1.17"
 serde_json = "1.0"
-serde_with = "2.3"
+serde_with = "3.0"
 tower = { version = "0.4", features = ["make"] }
 tower-http = { version = "0.4", features = ["fs", "compression-br", "cors"] }
 tracing = "0.1"

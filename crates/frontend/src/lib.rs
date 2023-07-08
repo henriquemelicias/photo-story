@@ -14,6 +14,12 @@ use gloo::net::http::Request;
 
 #[cfg( target_arch = "wasm32" )]
 use lol_alloc::{FreeListAllocator, LockedAllocator};
+
+#[cfg( not( feature = "ssr" ) )]
+#[cfg( target_arch = "wasm32" )]
+#[global_allocator]
+static ALLOCATOR: LockedAllocator<FreeListAllocator> = LockedAllocator::new( FreeListAllocator::new() );
+
 #[cfg( feature = "ssr" )]
 #[cfg( not( target_arch = "wasm32" ) )]
 pub use non_wasm_ssr::*;
@@ -23,17 +29,13 @@ use presentation::{layout, routes};
 
 #[cfg( feature = "ssr" )]
 #[cfg( not( target_arch = "wasm32" ) )]
-#[path = ""]
+#[path=""]
 mod non_wasm_ssr
 {
     pub mod logger;
     pub mod settings;
     pub mod ssr;
 }
-
-#[cfg( target_arch = "wasm32" )]
-#[global_allocator]
-static ALLOCATOR: LockedAllocator<FreeListAllocator> = LockedAllocator::new( FreeListAllocator::new() );
 
 pub mod domain;
 pub mod features;

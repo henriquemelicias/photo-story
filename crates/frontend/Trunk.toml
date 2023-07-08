@@ -1,0 +1,36 @@
+[build]
+target = "./trunk_index.html"
+dist = "./static"
+release = false
+public_url = "/"
+
+[watch]
+watch = [
+    "./trunk_index.html",
+    "./src",
+    "./styles",
+    "../../assets"
+]
+
+[[proxy]]
+backend = "http://localhost:5550"
+rewrite = "/api"
+
+[clean]
+dist = "./static"
+
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = [
+    "-c",
+    "just -f $TRUNK_SOURCE_DIR/justfile _generate_tailwind_css ./styles"
+]
+
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = [
+    "-c",
+    "just -f $TRUNK_SOURCE_DIR/justfile _update_index_html $TRUNK_STAGING_DIR/index.html"
+]

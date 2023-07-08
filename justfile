@@ -5,7 +5,7 @@ _default:
     @just --list
 
 # Env variables.
-export TRUNK_CONFIG := "./Trunk.toml"
+export TRUNK_CONFIG := "./crates/frontend/Trunk.toml"
 
 # Variables.
 BUILD_DIR := "./build"
