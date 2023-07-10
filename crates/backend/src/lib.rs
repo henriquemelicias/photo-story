@@ -8,12 +8,10 @@ use std::{
     net::{IpAddr, Ipv6Addr, SocketAddr},
     str::FromStr,
 };
+use anyhow::Context;
 
 pub mod logger;
 pub mod settings;
-
-#[cfg( test )]
-mod tests;
 
 mod app;
 mod domain;
@@ -23,9 +21,9 @@ mod services;
 mod utils;
 
 #[tokio::main]
-pub async fn init_server( addr: &str, port: u16 )
+pub async fn init_server( addr: &str, port: u16 ) -> anyhow::Result<()>
 {
-    let app = app::create().await;
+    let app = app::create().await.context( "Unable to create app" )?;
 
     /* Serve server. */
     let sock_addr = SocketAddr::from( (
@@ -38,5 +36,7 @@ pub async fn init_server( addr: &str, port: u16 )
     axum::Server::bind( &sock_addr )
         .serve( app.into_make_service() )
         .await
-        .expect( "Unable to start server" );
+        .context( "Unable to start server" )?;
+
+    Ok( () )
 }

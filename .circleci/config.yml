@@ -83,7 +83,7 @@ jobs:
           command: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --assume-yes clang
       - rust-toolchain-install
       - mold-linker-install
-        #- setup-sccache
+      #- setup-sccache
       #- restore-sccache-cache
       - run: cargo build
       - run: cargo clippy --fix --allow-dirty --allow-staged

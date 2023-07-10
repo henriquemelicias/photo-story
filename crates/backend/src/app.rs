@@ -1,9 +1,11 @@
 use axum::{http::HeaderValue, Router};
 use tower_http::{compression::CompressionLayer, cors::CorsLayer};
+use anyhow::Context;
 
 use crate::{logger, services::routes, settings};
 
-pub async fn create() -> Router
+#[allow(clippy::unused_async)]
+pub async fn create() -> anyhow::Result<Router>
 {
     // Main router.
     let mut app = Router::new().nest( "/api/v1", routes::api::create_route() );
@@ -23,16 +25,12 @@ pub async fn create() -> Router
     {
         app = app.layer(
             CorsLayer::new().allow_origin(
-                format!(
-                    "http://{}:{}",
-                    settings::SERVER.get().unwrap().frontend_addr,
-                    settings::SERVER.get().unwrap().frontend_port
-                )
+                format!("http://{}:{}", settings::get( &settings::SERVER )?.frontend_addr, settings::get(&settings::SERVER)?.frontend_port)
                 .parse::<HeaderValue>()
-                .unwrap(),
+                .context( "Unable to parse frontend address and port in the CorsLayer" )?,
             ),
         );
     }
 
-    app
+    Ok( app )
 }

@@ -2,6 +2,9 @@
 name = "monitoring"
 version = "0.1.0"
 edition = "2021"
+authors = ["Henrique Melícias"]
+description = "Library with monitoring utilities such as logger, tracing, metrics, etc..."
+license = "MIT"
 
 [dependencies]
 tracing = "0.1"

@@ -1,107 +1,31 @@
+//! The main entry point of the backend server.
+//!
+//! This file is the main entry point of the backend server. It is responsible for parsing the command line arguments, initializing the global settings variables, initializing the logger, and starting the server.
+//!
 use clap::Parser;
-use serde::Serialize;
 
 use backend::{logger, settings};
 
-// Command line arguments interface.
-#[derive(Parser, Debug)]
-#[clap()]
-struct CliArgs
-{
-    // Set runtime environment.
-    #[clap( short = 'e', long = "run-env" )]
-    run_env: Option<String>,
-
-    /// Set the listen addr.
-    #[clap( short = 'a', long = "addr" )]
-    addr: Option<String>,
-
-    /// Set the listen port.
-    #[clap( short = 'p', long = "port" )]
-    port: Option<u16>,
-
-    /// The frontend addr.
-    #[clap( long = "frontend-addr" )]
-    frontend_addr: Option<String>,
-
-    /// The frontend port.
-    #[clap( long = "frontend-port" )]
-    frontend_port: Option<u16>,
-
-    /// Set the log level.
-    /// Possible values: trace, debug, info, warn, error.
-    #[clap( short = 'l', long = "log-level" )]
-    log_level: Option<String>,
-}
-
-fn main()
-{
-    // Initialize global settings variables.
-    setup_settings();
-
-    // Tracing logs.
-    let ( _maybe_stdio_writer_guard, _maybe_file_writer_guard ) =
-        logger::init( settings::LOGGER.get().unwrap().log_level.as_str() );
-
-    tracing::info!( "Starting backend." );
-
-    backend::init_server(
-        settings::SERVER.get().unwrap().addr.as_str(),
-        settings::SERVER.get().unwrap().port,
-    );
-}
-
-fn setup_settings()
+fn main() -> anyhow::Result<()>
 {
     // Parse the command line arguments.
-    let cli_args = CliArgs::parse();
+    let cli_args = settings::CliArgs::parse();
 
-    /* Initialize global settings variables */
-    let general_config_overwrite = GeneralConfigsOverwrite {
-        run_env: cli_args.run_env.clone(),
-    };
-    let general_config_overwrite = serde_json::to_string( &general_config_overwrite ).unwrap();
+    // Get the path to the configuration files.
+    let configs_dir =
+        settings::get_configs_dir_path( "./configs/backend/", "BACKEND_CONFIGS_DIR", &cli_args.configs_dir )?;
 
-    let server_config_overwrite = ServerConfigsOverwrite {
-        addr:          cli_args.addr.clone(),
-        port:          cli_args.port,
-        frontend_addr: cli_args.frontend_addr.clone(),
-        frontend_port: cli_args.frontend_port,
-    };
-    let server_config_overwrite = serde_json::to_string( &server_config_overwrite ).unwrap();
+    // Initialize global settings variables.
+    settings::setup( &cli_args, configs_dir.as_path() )?;
 
-    let logger_config_overwrite = LoggerConfigsOverwrite {
-        log_level: cli_args.log_level.clone(),
-    };
-    let logger_config_overwrite = serde_json::to_string( &logger_config_overwrite ).unwrap();
+    // Tracing logs.
+    let ( _maybe_stdio_writer_guard, _maybe_file_writer_guard ) = logger::init(
+        settings::get( &settings::LOGGER )?.log_level.as_str(),
+    )?;
 
-    settings::setup(
-        general_config_overwrite,
-        server_config_overwrite,
-        logger_config_overwrite,
-    );
-}
+    tracing::info!("Starting {}", settings::get( &settings::GENERAL )?.app_name);
 
-#[serde_with::skip_serializing_none]
-#[derive(Serialize)]
-struct GeneralConfigsOverwrite
-{
-    run_env: Option<String>,
-}
+    backend::init_server(settings::get( &settings::SERVER )?.addr.as_str(), settings::get( &settings::SERVER )?.port )?;
 
-#[serde_with::skip_serializing_none]
-#[derive(Serialize)]
-struct ServerConfigsOverwrite
-{
-    addr:          Option<String>,
-    port:          Option<u16>,
-    frontend_addr: Option<String>,
-    frontend_port: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Serialize)]
-struct LoggerConfigsOverwrite
-{
-    log_level: Option<String>,
+    Ok( () )
 }

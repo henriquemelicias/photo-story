@@ -17,6 +17,11 @@ build-release:
     BUILD_DIR={{BUILD_DIR}}
     STATIC_DIR=$BUILD_DIR/static
 
+    # Install npm dependencies.
+    echo "Installing npm dependencies..."
+    npm install --no-audit --no-fund
+    echo
+
     # Create new final directory.
     rm -rf $BUILD_DIR
     mkdir -p $BUILD_DIR/static $BUILD_DIR/logs
@@ -25,6 +30,7 @@ build-release:
     cargo build --profile non-wasm-release --bin backend
     cargo build --features ssr --profile non-wasm-release --bin frontend
     trunk build --release --features ssr ./crates/frontend/trunk_index.html --dist $STATIC_DIR --public-url /static/
+    # -- -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
 
     # Remove assets directory on the static folder (used when using CSR).
     rm -r $STATIC_DIR/assets
@@ -103,6 +109,7 @@ install-init-dev:
     just install-udeps
     rustup target add wasm32-unknown-unknown
 
+
 # Install mold linker for faster compilation linker.
 install-mold-linker:
     rm -rf mold
@@ -122,22 +129,21 @@ install-udeps:
 npm-check-updates:
     npx npm-check-updates -u
 
-# Serve frontend.
-dioxus-serve-csr PORT="5555" BACKEND_PORT="5550":
-    cd {{justfile_directory()}}/crates/frontend; dioxus serve --features csr --port {{PORT}} --hot-reload
+# Serve dioxus frontend csr with hot-reloading.
+run-frontend-csr PORT="5556":
+    cd {{justfile_directory()}}/crates/frontend; dioxus serve --port {{PORT}} --hot-reload
 
 # Run frontend ssr.
-run-frontend-ssr PORT="5556" STATIC_DIR="./target/static" ASSETS_DIR="./assets" DEBUG_FILTER="info" OPTION="":
+run-frontend-ssr PORT="5556":
     # Stop process using same port.
     fuser -k {{PORT}}/tcp || true
-    FRONTEND_GENERAL_RUN_ENV=development cargo run --bin frontend {{OPTION}} -- --port {{PORT}} -s {{STATIC_DIR}} --assets-dir {{ASSETS_DIR}} -l {{DEBUG_FILTER}}
-
+    trunk serve --port {{PORT}} --features "ssr"
 
 # Run backend.
-run-backend PORT="5555" FRONTEND_ADDR="127.0.0.1" FRONTEND_PORT="5556" DEBUG_FILTER="info" OPTION="":
+run-backend ENV="development" PORT="5555" FRONTEND_PORT="5556" LOG_LEVEL="trace":
     # Stop process using same port.
     fuser -k {{PORT}}/tcp || true
-    BACKEND_GENERAL_RUN_ENV=development cargo run --bin backend {{OPTION}} -- --port {{PORT}} -l {{DEBUG_FILTER}} --frontend-addr={{FRONTEND_ADDR}} --frontend-port={{FRONTEND_PORT}}
+    cargo run --bin backend -- -e {{ENV}} --port {{PORT}} -l {{LOG_LEVEL}} --frontend-port {{FRONTEND_PORT}}
 
 # Format using custom rustfmt.
 rustfmt:

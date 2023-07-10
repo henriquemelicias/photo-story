@@ -2,6 +2,9 @@
 name = "backend"
 version = "0.1.0"
 edition = "2021"
+authors = ["Henrique Melícias"]
+description = "Backend for the application"
+license = "MIT"
 
 [[bin]]
 name = "backend"
@@ -21,7 +24,6 @@ tracing-log = "0.1"
 tokio = { version = "1.24", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_with = "2.3"
 figment = { version = "0.10", features = ["toml", "env", "json"] }
 derive-getters = "0.2"
 axum = "0.6"
@@ -31,4 +33,3 @@ tower-http = { version = "0.4", features = ["full", "fs", "compression-br", "cor
 validator = { version = "0.16", features = ["derive"] }
 futures = { version = "0.3", features = ["std"], default-features = false }
 qstring = "0.7"
-once_cell = "1.8"

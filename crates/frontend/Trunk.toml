@@ -1,6 +1,6 @@
 [build]
 target = "./trunk_index.html"
-dist = "./static"
+dist = "../../target/static"
 release = false
 public_url = "/"
 
@@ -8,16 +8,15 @@ public_url = "/"
 watch = [
     "./trunk_index.html",
     "./src",
-    "./styles",
     "../../assets"
 ]
 
 [[proxy]]
-backend = "http://localhost:5550"
+backend = "http://localhost:5555"
 rewrite = "/api"
 
 [clean]
-dist = "./static"
+dist = "../../target/static"
 
 [[hooks]]
 stage = "pre_build"

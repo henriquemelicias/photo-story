@@ -1,3 +1,4 @@
 [toolchain]
 channel = "nightly"
-components = ["clippy"]
+components = ["clippy", "rust-src"]
+

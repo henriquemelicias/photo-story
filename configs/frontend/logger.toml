@@ -1,13 +1,9 @@
 [default]
 log_level = "debug"
 is_stdout_emitted = true
-is_file_emitted = true
-files_directory = "./logs"
-files_prefix = "frontend.dev"
+files_emitted = { is_emitted = true, dir = "./logs", files_prefix = "frontend.dev" }
 
 [production]
 log_level = "info"
 is_stdout_emitted = true
-is_file_emitted = true
-files_directory = "./logs"
-files_prefix = "frontend.prod"
+files_emitted = { is_emitted = true, dir = "./logs", files_prefix = "frontend.prod" }

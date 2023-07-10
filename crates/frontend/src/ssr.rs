@@ -1,25 +1,22 @@
 use std::{
     convert::Infallible,
-    error::Error,
     net::{IpAddr, Ipv6Addr, SocketAddr},
     str::FromStr,
 };
 
+use anyhow::Context;
 use axum::{
-    body,
-    body::{Body, BoxBody, StreamBody},
+    body::{Body, StreamBody},
     extract::State,
     handler::Handler,
-    http::{Method, Request, Response, StatusCode},
+    http::{Request},
     response::IntoResponse,
-    routing::{get, get_service},
+    routing::{get_service},
     Router,
 };
 use dioxus::prelude::*;
 use futures::{stream, StreamExt};
-use hyper::{client::HttpConnector, upgrade::Upgraded, Uri};
-use once_cell::sync::Lazy;
-use tower::ServiceExt;
+use hyper::{client::HttpConnector, Uri};
 use tower_http::{
     compression::CompressionLayer,
     cors::CorsLayer,
@@ -31,9 +28,9 @@ use crate::settings;
 type Client = hyper::client::Client<HttpConnector, Body>;
 
 #[tokio::main]
-pub async fn init_server( addr: &str, port: u16 ) -> Result<(), Box<dyn Error>>
+pub async fn init_server( addr: &str, port: u16 ) -> anyhow::Result<()>
 {
-    let app = app_create().await.ok_or( "Failed to create app" )?;
+    let app = app_create().await.context( "Failed to create app." )?;
 
     /* Serve server. */
     let sock_addr = SocketAddr::from( (
@@ -46,7 +43,7 @@ pub async fn init_server( addr: &str, port: u16 ) -> Result<(), Box<dyn Error>>
     axum::Server::bind( &sock_addr )
         .serve( app.into_make_service() )
         .await
-        .expect( "Unable to start server" );
+        .context( "Unable to start server" )?;
 
     Ok( () )
 }
@@ -110,9 +107,9 @@ async fn api_reverse_proxy_handler( State( client ): State<Client>, mut req: Req
     -> axum::response::Response
 {
     let path = req.uri().path();
-    let path_query = req.uri().path_and_query().map( |v| v.as_str() ).unwrap_or( path );
+    let path_query = req.uri().path_and_query().map_or( path, |v| v.as_str() );
 
-    let uri = format!( "{}/api{}", settings::SERVER.get().unwrap().proxy_url, path_query );
+    let uri = &[&settings::SERVER.get().unwrap().proxy_url, "/api", path_query].concat();
 
     *req.uri_mut() = Uri::try_from( uri ).unwrap();
 
@@ -146,9 +143,10 @@ async fn get_dioxus_render_state( static_dir: &str ) -> DioxusRenderState
     }
 }
 
+#[allow( clippy::unused_async )]
 async fn dioxus_render_endpoint( State( state ): State<DioxusRenderState>, _req: Request<Body> ) -> impl IntoResponse
 {
-    let mut app_vdom = VirtualDom::new( crate::ComponentApp );
+    let mut app_vdom = VirtualDom::new( crate::presentation::ComponentApp );
     let _ = app_vdom.rebuild();
 
     let html = dioxus_ssr::render( &app_vdom );
