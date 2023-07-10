@@ -15,8 +15,8 @@ use std::sync::OnceLock;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
-pub use settings::{get, get_configs_dir_path, Error};
-use settings::{ImportFigment, RuntimeEnvironmentType};
+pub use settings::{Error, get, get_configs_dir_path};
+use settings::{FigmentImporter, RuntimeEnvironmentType};
 
 pub static GENERAL: OnceLock<GeneralConfigs> = OnceLock::new();
 pub static SERVER: OnceLock<ServerConfigs> = OnceLock::new();
@@ -69,6 +69,12 @@ pub struct CliArgs
     #[clap( long = "configs-dir", value_parser )]
     #[serde( skip_serializing_if = "Option::is_none" )]
     pub configs_dir: Option<PathBuf>,
+
+    /// Env prefix.
+    /// The prefix for the environment variables to import settings.
+    #[clap( long = "env-prefix", value_parser, default_value = "FRONTEND" )]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    pub env_prefix: Option<String>,
 }
 
 /// Setup the global variables with settings.
@@ -84,7 +90,7 @@ pub struct CliArgs
 ///
 /// If the settings import fails, then the function returns an error.
 ///
-pub fn setup( cli_args: &CliArgs, configs_dir: &Path ) -> Result<(), settings::Error>
+pub fn setup( configs_dir: &Path, env_prefix: &str, cli_args: &CliArgs  ) -> Result<(), settings::Error>
 {
     /* General settings */
     let general_path = configs_dir.join( "general.toml" );
@@ -93,12 +99,12 @@ pub fn setup( cli_args: &CliArgs, configs_dir: &Path ) -> Result<(), settings::E
     let mut general_configs = GeneralConfigs::import(
         None,
         general_path,
-        Some( "backend_general_" ),
-        cli_args,
+        Some( &[env_prefix, "_GENERAL_"].concat() ),
+        Some( cli_args ),
     )?;
 
     // Get runtime environment from general settings.
-    let runtime_env: RuntimeEnvironmentType = env::var( "BACKEND_GENERAL_RUN_ENV" ).map_or_else(
+    let runtime_env: RuntimeEnvironmentType = env::var( [env_prefix, "_GENERAL_RUN_ENV"].concat() ).map_or_else(
         |_| general_configs.run_env.clone(),
         |env| RuntimeEnvironmentType::from( &*env ),
     );
@@ -110,8 +116,8 @@ pub fn setup( cli_args: &CliArgs, configs_dir: &Path ) -> Result<(), settings::E
     let server_configs = ServerConfigs::import(
         Some( &runtime_env ),
         server_path,
-        Some( "backend_server_" ),
-        cli_args,
+        Some( &[env_prefix, "_SERVER_"].concat() ),
+        Some( cli_args ),
     )?;
 
     /* Logger settings */
@@ -121,8 +127,8 @@ pub fn setup( cli_args: &CliArgs, configs_dir: &Path ) -> Result<(), settings::E
     let mut logger_configs = LoggerConfigs::import(
         Some( &runtime_env ),
         logger_path,
-        Some( "backend_logger_" ),
-        cli_args,
+        Some( &[env_prefix, "_LOGGER_"].concat() ),
+        Some( cli_args ),
     )?;
 
     /* Set global settings variables */
@@ -151,7 +157,7 @@ impl Default for GeneralConfigs
     }
 }
 
-impl ImportFigment<Self, CliArgs> for GeneralConfigs {}
+impl FigmentImporter<Self, CliArgs> for GeneralConfigs {}
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerConfigs
@@ -177,7 +183,7 @@ impl Default for ServerConfigs
     }
 }
 
-impl ImportFigment<Self, CliArgs> for ServerConfigs {}
+impl FigmentImporter<Self, CliArgs> for ServerConfigs {}
 
 #[derive(Serialize, Deserialize)]
 pub struct LoggerConfigs
@@ -199,7 +205,7 @@ impl Default for LoggerConfigs
     }
 }
 
-impl ImportFigment<Self, CliArgs> for LoggerConfigs {}
+impl FigmentImporter<Self, CliArgs> for LoggerConfigs {}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LoggerFilesEmittedSubconfig

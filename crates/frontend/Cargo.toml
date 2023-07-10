@@ -1,3 +1,5 @@
+cargo-features = ["per-package-target"]
+
 [package]
 name = "frontend"
 version = "0.1.0"
@@ -5,6 +7,7 @@ edition = "2021"
 authors = ["Henrique Melícias"]
 description = "Frontend using Dioxus."
 license = "MIT"
+forced-target = "wasm32-unknown-unknown"
 
 [[bin]]
 name = "frontend"
@@ -16,31 +19,14 @@ ssr = ["dioxus-web/hydrate"]
 
 [dependencies]
 common = { path = "../common" }
+
 thiserror = "1.0"
 anyhow = "1.0"
-dioxus = "0.3"
-dioxus-router = "0.3"
-dioxus-web = "0.3"
+dioxus = { git = "https://github.com/DioxusLabs/dioxus" }
+dioxus-router = { git = "https://github.com/DioxusLabs/dioxus" }
+dioxus-web = { git = "https://github.com/DioxusLabs/dioxus" }
 gloo = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 wasm-bindgen = "0.2"
 web-sys = "0.3"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
 lol_alloc = "0.4"
-
-[target.'cfg( not( target_arch = "wasm32" ))'.dependencies]
-monitoring = { path = "../monitoring" }
-settings = { path = "../settings" }
-axum = "0.6"
-clap = { version = "4.1", features = ["derive"] }
-dioxus-ssr = "0.3"
-futures = "0.3"
-hyper = { version = "0.14", features = ["full"] }
-serde_json = "1.0"
-serde_with = "3.0"
-tower = { version = "0.4", features = ["make"] }
-tower-http = { version = "0.4", features = ["fs", "compression-br", "cors"] }
-tracing = "0.1"
-tracing-log = "0.1"
-tokio = { version = "1.26", features = ["full"] }

@@ -27,10 +27,10 @@ build-release:
     mkdir -p $BUILD_DIR/static $BUILD_DIR/logs
 
     # Build backend and static files.
-    cargo build --profile non-wasm-release --bin backend
-    cargo build --features ssr --profile non-wasm-release --bin frontend
-    trunk build --release --features ssr ./crates/frontend/trunk_index.html --dist $STATIC_DIR --public-url /static/
-    # -- -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
+    RUSTFLAGS="-C target-cpu=native" cargo build --profile non-wasm-release --bin backend
+    RUSTFLAGS="-C target-cpu=native" cargo build --profile non-wasm-release --features ssr --bin web_server
+    trunk build --release --features ssr ./crates/frontend/trunk_index2.html --dist $STATIC_DIR --public-url /static/
+    # TODO test these: -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
 
     # Remove assets directory on the static folder (used when using CSR).
     rm -r $STATIC_DIR/assets
@@ -40,7 +40,7 @@ build-release:
     rm $BUILD_DIR/assets/justfile
     cp -r ./configs $BUILD_DIR
     cp -f ./target/non-wasm-release/backend $BUILD_DIR/backend
-    cp -f ./target/non-wasm-release/frontend $BUILD_DIR/frontend
+    cp -f ./target/non-wasm-release/web_server $BUILD_DIR/frontend_web_server
 
     # Optimize static files
     find $STATIC_DIR/*.wasm -exec cp {} ./target/unoptimized.wasm \; -exec wasm-snip --snip-rust-panicking-code {} -o {} \; -exec wasm-opt -Oz {} -o {} \;

@@ -5,23 +5,15 @@ members = [
     "crates/backend",
     "crates/frontend",
     "crates/common",
+    "crates/web_server",
     # Utils.
     "crates/monitoring",
     "crates/settings",
 ]
 
-default-members = ["crates/backend", "crates/frontend"]
+default-members = ["crates/backend", "crates/frontend", "crates/common", "crates/web_server"]
 
-[profile.dev]
-codegen-units = 1
-
-[profile.non-wasm-release]
-inherits = "release"
-lto = true
-debug = false
-debug-assertions = false
-codegen-units = 1
-
+# [profile.release.package.frontend] would be better, but panic and lto are not supported in package profiles yet.
 [profile.release]
 # less code to include into binary
 panic = "abort"
@@ -33,3 +25,12 @@ opt-level = 'z'
 lto = true
 # required for wasm-snip
 debug = true
+
+[profile.non-wasm-release]
+inherits = "release"
+lto = true
+debug = false
+debug-assertions = false
+codegen-units = 1
+opt-level = 3
+

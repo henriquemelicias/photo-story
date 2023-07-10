@@ -3,10 +3,9 @@
 _default:
     @just --list
 
-# Compress assets within PATH.
-compress-brotli PATH="./images/**/*":
-    # Compress assets.
-    npx brotli-cli compress -q 11 --glob --bail false {{PATH}} || true
+# Compress assets within FILE.
+brotli FILE:
+    npx brotli-cli compress -q 11 --glob --bail false {{invocation_directory()}}/{{FILE}} || true
 
 # Convert image in the current directory to the webp format using ImageMagick. Recommended: 50 or 80.
 magick-img-to-webp FILE QUALITY="50":
@@ -26,4 +25,3 @@ magick-resize FILE WIDTH HEIGHT:
     EXTENSION="${FILENAME##*.}" && \
     FILENAME=$(echo "${FILENAME%.*}") && \
     magick {{invocation_directory()}}/{{FILE}} -resize {{WIDTH}}x{{HEIGHT}} {{invocation_directory()}}/$FILENAME-{{WIDTH}}x{{HEIGHT}}.$EXTENSION
-

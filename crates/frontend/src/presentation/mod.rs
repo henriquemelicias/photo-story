@@ -1,13 +1,13 @@
 #![allow( non_snake_case )]
 #![allow( clippy::module_name_repetitions )]
 
+use dioxus::prelude::*;
+use gloo::net::http::Request;
+
 // pub mod models;
 // pub mod components;
 pub mod layout;
 pub mod routes;
-
-use dioxus::prelude::*;
-use gloo::net::http::Request;
 
 #[allow( non_snake_case )]
 #[must_use]

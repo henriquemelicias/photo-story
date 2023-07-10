@@ -1,21 +1,19 @@
 use std::{
-    convert::Infallible,
     net::{IpAddr, Ipv6Addr, SocketAddr},
     str::FromStr,
 };
 
 use anyhow::Context;
 use axum::{
-    body::{Body, StreamBody},
+    body::Body,
     extract::State,
     handler::Handler,
-    http::{Request},
+    http::Request,
     response::IntoResponse,
-    routing::{get_service},
     Router,
+    routing::get_service,
 };
-use dioxus::prelude::*;
-use futures::{stream, StreamExt};
+
 use hyper::{client::HttpConnector, Uri};
 use tower_http::{
     compression::CompressionLayer,
@@ -24,6 +22,8 @@ use tower_http::{
 };
 
 use crate::settings;
+#[cfg(feature = "ssr")]
+use crate::ssr;
 
 type Client = hyper::client::Client<HttpConnector, Body>;
 
@@ -79,17 +79,19 @@ async fn app_create() -> Option<Router>
     let serve_assets_dir =
         get_service( ServeDir::new( settings::SERVER.get()?.assets_dir.as_str() ).precompressed_br() );
 
-    let dioxus_state = get_dioxus_render_state( settings::SERVER.get()?.static_dir.as_str() ).await;
-    let dioxus_renderer = dioxus_render_endpoint.with_state( dioxus_state );
-
     // Routes.
     app = app
         .route( "/robots.txt", robots_file )
         .route( "/favicon.ico", favicon_file )
-        .nest_service( "/static", serve_static_dir.clone() )
-        .nest_service( "/assets", serve_assets_dir.clone() )
-        .layer( CompressionLayer::new().br( true ).no_gzip().no_deflate() )
-        .fallback_service( dioxus_renderer );
+        .nest_service( "/static", serve_static_dir )
+        .nest_service( "/assets", serve_assets_dir )
+        .layer( CompressionLayer::new().br( true ).no_gzip().no_deflate() );
+
+    // Server side rendering.
+    #[cfg(feature = "ssr")]
+    {
+        app = ssr( app ).await;
+    }
 
     // Http tracing logs middleware layer.
     app = crate::logger::middleware_http_tracing( app );
@@ -101,6 +103,21 @@ async fn app_create() -> Option<Router>
     app = app.layer( CorsLayer::permissive() );
 
     Some( app )
+}
+
+/// Server side rendering.
+///
+/// # Arguments
+///
+/// * `app` - The main router.
+#[cfg(feature = "ssr")]
+async fn ssr( mut app: Router ) -> Router
+{
+    let dioxus_state = ssr::get_dioxus_render_state( settings::SERVER.get().unwrap().static_dir.as_str() ).await;
+    let dioxus_renderer = ssr::dioxus_render_endpoint.with_state( dioxus_state );
+    app = app.fallback_service( dioxus_renderer );
+
+    app
 }
 
 async fn api_reverse_proxy_handler( State( client ): State<Client>, mut req: Request<Body> )
@@ -116,45 +133,3 @@ async fn api_reverse_proxy_handler( State( client ): State<Client>, mut req: Req
     client.request( req ).await.unwrap().into_response()
 }
 
-#[derive(Clone)]
-struct DioxusRenderState
-{
-    index_html_prefix: String,
-    index_html_suffix: String,
-}
-
-async fn get_dioxus_render_state( static_dir: &str ) -> DioxusRenderState
-{
-    // Get index file.
-    let index_html_s = tokio::fs::read_to_string( format!( "{}/index.html", static_dir ) )
-        .await
-        .expect( "Failed to read index.html. Did you choose the correct static directory?" );
-
-    let ( index_html_prefix, index_html_suffix ) = index_html_s.split_once( r#"<div id="main">"# ).unwrap();
-
-    let mut index_html_prefix = index_html_prefix.to_owned();
-    index_html_prefix.push_str( r#"<div id="main">"# );
-
-    let index_html_suffix = index_html_suffix.to_owned();
-
-    DioxusRenderState {
-        index_html_prefix,
-        index_html_suffix,
-    }
-}
-
-#[allow( clippy::unused_async )]
-async fn dioxus_render_endpoint( State( state ): State<DioxusRenderState>, _req: Request<Body> ) -> impl IntoResponse
-{
-    let mut app_vdom = VirtualDom::new( crate::presentation::ComponentApp );
-    let _ = app_vdom.rebuild();
-
-    let html = dioxus_ssr::render( &app_vdom );
-
-    StreamBody::new(
-        stream::once( async move { state.index_html_prefix } )
-            .chain( stream::once( async move { html } ) )
-            .chain( stream::once( async move { state.index_html_suffix } ) )
-            .map( Result::<_, Infallible>::Ok ),
-    )
-}

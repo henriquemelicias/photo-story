@@ -7,23 +7,10 @@
 
 #[cfg( target_arch = "wasm32" )]
 use lol_alloc::{FreeListAllocator, LockedAllocator};
-#[cfg( feature = "ssr" )]
-#[cfg( not( target_arch = "wasm32" ) )]
-pub use non_wasm::*;
 
 #[cfg( target_arch = "wasm32" )]
 #[global_allocator]
 static ALLOCATOR: LockedAllocator<FreeListAllocator> = LockedAllocator::new( FreeListAllocator::new() );
-
-#[cfg( feature = "ssr" )]
-#[cfg( not( target_arch = "wasm32" ) )]
-#[path = ""]
-mod non_wasm
-{
-    pub mod logger;
-    pub mod settings;
-    pub mod ssr;
-}
 
 pub mod domain;
 pub mod features;

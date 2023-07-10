@@ -1,6 +1,6 @@
+use anyhow::Context;
 use axum::{http::HeaderValue, Router};
 use tower_http::{compression::CompressionLayer, cors::CorsLayer};
-use anyhow::Context;
 
 use crate::{logger, services::routes, settings};
 
