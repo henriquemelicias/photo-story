@@ -13,6 +13,9 @@ forced-target = "wasm32-unknown-unknown"
 name = "frontend"
 path = "src/bin/main.rs"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [features]
 default = []
 ssr = ["dioxus-web/hydrate"]
