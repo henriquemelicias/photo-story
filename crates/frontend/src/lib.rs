@@ -12,11 +12,12 @@ use lol_alloc::{FreeListAllocator, LockedAllocator};
 #[global_allocator]
 static ALLOCATOR: LockedAllocator<FreeListAllocator> = LockedAllocator::new( FreeListAllocator::new() );
 
-pub mod domain;
-pub mod features;
-pub mod infrastructure;
 pub mod presentation;
-pub mod utils;
+
+mod domain;
+mod features;
+mod infrastructure;
+mod utils;
 
 // #[allow( non_snake_case )]
 // pub fn Layout() -> Html

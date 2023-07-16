@@ -10,19 +10,26 @@ use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
-use std::sync::OnceLock;
+use std::net::{SocketAddr, SocketAddrV4};
+use std::ops::Deref;
+use std::str::FromStr;
+use std::sync::{Arc, OnceLock};
+use axum::http;
 
 use clap::Parser;
+use error_stack::{FutureExt, IntoReport, Report, ResultExt};
+use futures::TryFutureExt;
+use hyper::Uri;
 use serde::{Deserialize, Serialize};
 
-pub use settings::{Error, get, get_configs_dir_path};
-use settings::{FigmentImporter, RuntimeEnvironmentType};
+pub use settings::{get_configs_dir_path};
+use settings::{FigmentExtractor, RuntimeEnvironment};
+use thiserror::Error;
+use url::Url;
+use crate::{logger};
+use settings::validators;
 
-pub static GENERAL: OnceLock<GeneralConfigs> = OnceLock::new();
-pub static SERVER: OnceLock<ServerConfigs> = OnceLock::new();
-pub static LOGGER: OnceLock<LoggerConfigs> = OnceLock::new();
-
-// Command line arguments interface.
+/// Command line arguments interface.
 #[derive(Parser, Debug, Serialize, Deserialize)]
 #[clap()]
 pub struct CliArgs
@@ -77,6 +84,11 @@ pub struct CliArgs
     pub env_prefix: Option<String>,
 }
 
+/// Error type for the [`init`] function.
+#[derive(Error, Debug)]
+#[error( "Failed to import the configs of {0}." )]
+pub struct InitImportConfigError(&'static str );
+
 /// Setup the global variables with settings.
 ///
 /// The function imports the settings from the configuration files, the environment variables and the command line arguments. The latter overwrites the former.
@@ -84,66 +96,74 @@ pub struct CliArgs
 /// # Arguments
 ///
 /// * `cli_args` - The command line arguments.
+/// * `env_prefix` - The prefix for the environment variables to import settings.
 /// * `configs_dir` - The directory where the configuration files are located.
 ///
 /// # Errors
 ///
 /// If the settings import fails, then the function returns an error.
 ///
-pub fn setup( configs_dir: &Path, env_prefix: &str, cli_args: &CliArgs  ) -> Result<(), settings::Error>
+pub fn init(configs_dir: &Path, env_prefix: &str, cli_args: &CliArgs  ) -> Result<AllConfigs, Report<InitImportConfigError>>
 {
     /* General settings */
     let general_path = configs_dir.join( "general.toml" );
     let general_path = if general_path.exists() { general_path.to_str() } else { None };
 
-    let mut general_configs = GeneralConfigs::import(
+    let mut general_configs = GeneralConfigs::extract(
         None,
         general_path,
         Some( &[env_prefix, "_GENERAL_"].concat() ),
         Some( cli_args ),
-    )?;
+    ).into_report().change_context( InitImportConfigError( "GENERAL" ) )?;
 
     // Get runtime environment from general settings.
-    let runtime_env: RuntimeEnvironmentType = env::var( [env_prefix, "_GENERAL_RUN_ENV"].concat() ).map_or_else(
+    let runtime_env: RuntimeEnvironment = env::var( [env_prefix, "_GENERAL_RUN_ENV"].concat() ).map_or_else(
         |_| general_configs.run_env.clone(),
-        |env| RuntimeEnvironmentType::from( &*env ),
+        |env| RuntimeEnvironment::from( &*env ),
     );
 
     /* Server settings */
     let server_path = configs_dir.join( "server.toml" );
     let server_path = if server_path.exists() { server_path.to_str() } else { None };
 
-    let server_configs = ServerConfigs::import(
+    let server_configs = ServerConfigs::extract(
         Some( &runtime_env ),
         server_path,
         Some( &[env_prefix, "_SERVER_"].concat() ),
         Some( cli_args ),
-    )?;
+    ).into_report().change_context( InitImportConfigError( "SERVER" ) )?;
 
     /* Logger settings */
     let logger_path = configs_dir.join( "logger.toml" );
     let logger_path = if logger_path.exists() { logger_path.to_str() } else { None };
 
-    let mut logger_configs = LoggerConfigs::import(
+    let mut logger_configs = LoggerConfigs::extract(
         Some( &runtime_env ),
         logger_path,
         Some( &[env_prefix, "_LOGGER_"].concat() ),
         Some( cli_args ),
-    )?;
+    ).into_report().change_context( InitImportConfigError( "LOGGER" ) )?;
 
-    /* Set global settings variables */
-    GENERAL.set( general_configs );
-    SERVER.set( server_configs );
-    LOGGER.set( logger_configs );
+    Ok( AllConfigs {
+        general: general_configs,
+        server:  server_configs,
+        logger:  logger_configs,
+    } )
+}
 
-    Ok( () )
+/// All the settings imported.
+pub struct AllConfigs
+{
+    pub general: GeneralConfigs,
+    pub server:  ServerConfigs,
+    pub logger:  LoggerConfigs,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct GeneralConfigs
 {
     pub app_name: String,
-    pub run_env:  RuntimeEnvironmentType,
+    pub run_env: RuntimeEnvironment,
 }
 
 impl Default for GeneralConfigs
@@ -152,21 +172,20 @@ impl Default for GeneralConfigs
     {
         Self {
             app_name: "frontend".to_string(),
-            run_env:  RuntimeEnvironmentType::Development,
+            run_env:  RuntimeEnvironment::Development,
         }
     }
 }
 
-impl FigmentImporter<Self, CliArgs> for GeneralConfigs {}
+impl FigmentExtractor<Self> for GeneralConfigs {}
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ServerConfigs
 {
-    pub addr:       String,
-    pub port:       u16,
-    pub proxy_url:  String,
-    pub static_dir: String,
-    pub assets_dir: String,
+    pub sock_addr_v4:  SocketAddrV4,
+    pub proxy_url:  Url,
+    pub static_dir: validators::DirectoryPath,
+    pub assets_dir: validators::DirectoryPath,
 }
 
 impl Default for ServerConfigs
@@ -174,21 +193,26 @@ impl Default for ServerConfigs
     fn default() -> Self
     {
         Self {
-            addr:       "127.0.0.1".to_string(),
-            port:       5556,
-            proxy_url:  "http://127.0.0.1:5555".to_string(),
-            static_dir: "./target/static".to_string(),
-            assets_dir: "./assets".to_string(),
+            sock_addr_v4:  SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 5556 ),
+            proxy_url:  Url::parse("http://127.0.0.1:5555").unwrap(),
+            static_dir: PathBuf::from("./build/static").try_into().unwrap_or_else( |err| {
+                println!( "Failed to parse the default value for the server.static_dir. Error: {}", err );
+                validators::DirectoryPath::prompt()
+            }),
+            assets_dir: PathBuf::from("./assets").try_into().unwrap_or_else( |err| {
+                println!( "Failed to parse the default value for the server.assets_dir. Error: {}", err );
+                validators::DirectoryPath::prompt()
+            }),
         }
     }
 }
 
-impl FigmentImporter<Self, CliArgs> for ServerConfigs {}
+impl FigmentExtractor<Self> for ServerConfigs {}
 
 #[derive(Serialize, Deserialize)]
 pub struct LoggerConfigs
 {
-    pub log_level:          String,
+    pub log_level:          logger::Level,
     pub is_stdout_emitted:  bool,
     pub files_emitted: LoggerFilesEmittedSubconfig,
 }
@@ -198,21 +222,21 @@ impl Default for LoggerConfigs
     fn default() -> Self
     {
         Self {
-            log_level:         String::from( "debug" ),
+            log_level:         logger::Level::from_str( "debug" ).unwrap(),
             is_stdout_emitted: true,
             files_emitted:     LoggerFilesEmittedSubconfig::default()
         }
     }
 }
 
-impl FigmentImporter<Self, CliArgs> for LoggerConfigs {}
+impl FigmentExtractor<Self> for LoggerConfigs {}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LoggerFilesEmittedSubconfig
 {
     pub is_emitted: bool,
-    pub dir: String,
-    pub files_prefix: String
+    pub dir: validators::DirectoryPath,
+    pub files_prefix: String,
 }
 
 impl Default for LoggerFilesEmittedSubconfig
@@ -221,7 +245,9 @@ impl Default for LoggerFilesEmittedSubconfig
     {
         Self {
             is_emitted: true,
-            dir: "./logs".to_string(),
+            dir: PathBuf::from("./logs").try_into().unwrap_or_else( |err| {
+                panic!( "Default settings used for logger but emitting to files is enabled and the failed to convert logs directory: {}", err )
+            } ),
             files_prefix: "frontend.dev".to_string()
         }
     }

@@ -7,43 +7,30 @@
 use std::{env, path::PathBuf};
 use std::cell::OnceCell;
 use std::sync::OnceLock;
+use thiserror::Error;
 
 use figment::{
     Figment,
     providers::{Env, Format, Serialized, Toml},
 };
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
-/// The error type for the settings module.
-#[derive(Error, Debug)]
-pub enum Error
-{
-    /// Failed to get settings from OnceCell.
-    #[error( "Failed to get settings from global once_cell variable: {0}. Value is None." )]
-    GetIsNone( String ),
-    /// Path to the configs directory is invalid.
-    #[error( "Path to the configs directory ({0}) is invalid: {1}" )]
-    InvalidConfigsDir( PathBuf, &'static str ),
-    /// Failed to load settings with figment.
-    #[error( "Failed to load settings with figment." )]
-    LoadFailure( #[from] figment::Error ),
-}
+pub mod validators;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde( rename_all = "lowercase" )]
-pub enum RuntimeEnvironmentType
+pub enum RuntimeEnvironment
 {
     Development,
     Production,
 }
 
-impl Default for RuntimeEnvironmentType
+impl Default for RuntimeEnvironment
 {
     fn default() -> Self { Self::Development }
 }
 
-impl std::fmt::Display for RuntimeEnvironmentType
+impl std::fmt::Display for RuntimeEnvironment
 {
     fn fmt( &self, f: &mut std::fmt::Formatter ) -> std::fmt::Result
     {
@@ -55,7 +42,7 @@ impl std::fmt::Display for RuntimeEnvironmentType
     }
 }
 
-impl From<&str> for RuntimeEnvironmentType
+impl From<&str> for RuntimeEnvironment
 {
     fn from( env: &str ) -> Self
     {
@@ -67,9 +54,21 @@ impl From<&str> for RuntimeEnvironmentType
     }
 }
 
+/// Error type for the [`get_configs_dir_path`] function.
+#[derive(Error, Debug)]
+pub enum GetConfigsDirPathError
+{
+    /// The path is not a directory.
+    #[error("The path chosen with the {0} is not a directory: {1}")]
+    NotADirectory( &'static str, PathBuf ),
+    /// The directory does not exist.
+    #[error("The directory chosen with the {0} does not exist: {1}")]
+    DirectoryDoesNotExist( &'static str, PathBuf ),
+}
+
 /// Get the path to the configuration files.
 ///
-/// It gets the path from the `cli_args`, environment variable, or uses the default value. The former overwrites the latter.
+/// It gets the path from the `cli_args`, environment variable with `env_key`, or uses the default value. The former overwrites the latter.
 ///
 /// # Arguments
 ///
@@ -79,85 +78,102 @@ impl From<&str> for RuntimeEnvironmentType
 ///
 /// # Errors
 ///
-/// If the path is invalid, then the function returns an error.
+/// If the path is invalid, then the function returns [`GetConfigsDirPathError`].
 ///
-pub fn get_configs_dir_path( default_path: &str, env_key: &str, cli_arg: &Option<PathBuf> ) -> Result<PathBuf, Error>
+pub fn get_configs_dir_path( default_path: &str, env_key: &str, cli_arg: &Option<PathBuf> ) -> Result<PathBuf, GetConfigsDirPathError>
 {
-    // Get the path to the configuration files.
-    let configs_dir = env::var( env_key ).unwrap_or_else(|_| default_path.to_string());
+    let mut path_source = "environment variable";
+
+    // Get the path to the configuration files from the default path or environment variable. The latter overwrites the former.
+    let configs_dir = env::var( env_key ).unwrap_or_else(|_| {
+        path_source = "default value";
+        default_path.to_string()
+    });
+
     // Substitute the default or environment variable value with the value from the command line.
     let configs_dir = cli_arg.as_ref().map_or_else(
         || PathBuf::from( &configs_dir ),
-        |configs_dir| PathBuf::from( configs_dir.as_path() ),
+        |configs_dir| {
+            path_source = "command line";
+            PathBuf::from( configs_dir.as_path() )
+        },
     );
-
-    if !configs_dir.exists()
-    {
-        return Err( Error::InvalidConfigsDir( configs_dir, "Error: Path does not exist." ) );
-    }
 
     if !configs_dir.is_dir()
     {
-        return Err( Error::InvalidConfigsDir( configs_dir, "Error: Path is not a directory." ) );
+        return Err( GetConfigsDirPathError::NotADirectory( path_source, configs_dir ) );
+    }
+    if !configs_dir.exists()
+    {
+        return Err( GetConfigsDirPathError::DirectoryDoesNotExist( path_source, configs_dir ) );
     }
 
     Ok( configs_dir )
 }
 
+/// Error type for the function [`SettingsGetter::get`].
+#[derive(Error, Debug)]
+#[error("Failed to get settings from the setting struct {0} because the value is None.")]
+pub struct SettingsGetError( &'static str );
+
 /// Trait for struct that can get the value from a settings struct.
 pub trait SettingsGetter<T> {
-    /// Get the value from `&self`.
+    /// Get the value from `T`.
     ///
     /// # Errors
     ///
-    /// If the get failed or returns `None`, then return `Error::GetIsNone`.
-    fn get( &self ) -> Result<&T, Error>;
+    /// If the get failed or returns [`None`], then return [`SettingsGetError`].
+    fn get( &self ) -> Result<&T, SettingsGetError>;
 }
 
 impl<T> SettingsGetter<T> for OnceCell<T>
 {
-    fn get( &self ) -> Result<&T, Error>
+    fn get( &self ) -> Result<&T, SettingsGetError>
     {
-        self.get().ok_or_else( || Error::GetIsNone(std::any::type_name::<T>().to_string()) )
+        self.get().ok_or_else( || SettingsGetError( std::any::type_name::<T>()) )
     }
 }
 
 impl<T> SettingsGetter<T> for OnceLock<T>
 {
-    fn get( &self ) -> Result<&T, Error>
+    fn get( &self ) -> Result<&T, SettingsGetError>
     {
-        self.get().ok_or_else( || Error::GetIsNone(std::any::type_name::<T>().to_string()) )
+        self.get().ok_or_else( || SettingsGetError( std::any::type_name::<T>()) )
     }
 }
 
-/// Get the value from the struct that implements the trait `GetFnParameter<T>`.
+/// Get the value from the struct that implements the trait [`SettingsGetter`}.
 /// This function is used to get the settings from the global variable and for it to be more convenient to use.
 ///
 /// # Arguments
 ///
-/// * `cell` - The struct that implements the trait `GetFnParameter<T>`.
+/// * `settings` - The struct with the settings.
 ///
 /// # Errors
 ///
-/// If the get failed or returns `None`, then return `Error::GetIsNone`.
+/// If the get failed or returns [`None`], then return [`SettingsGetError`].
 #[inline]
-pub fn get<T, U: SettingsGetter<T>>(cell: &U) -> Result<&T, Error>
+pub fn get<T, U: SettingsGetter<T>>(settings: &U) -> Result<&T, SettingsGetError>
 {
-    cell.get()
+    settings.get()
 }
 
-/// Used with the `FigmentImporter` trait generic parameter `U` if there's no command line arguments to overwrite the settings.
-#[derive(Serialize)]
-pub struct NoCliArgs;
+/// Error type for the function [`FigmentExtractor::extract`].
+#[derive(Error, Debug)]
+#[error("Failed to extract settings due to the figment error: {source}.")]
+pub struct FigmentExtractionFailedError
+{
+    #[from]
+    source: figment::Error,
+}
 
 /// Trait to import settings from different sources using figment.
 ///
 /// # Arguments
 ///
 /// * `T` - The type of the settings struct where data will be imported to.
-/// * `U` - The type of the command line arguments struct.
 ///
-pub trait FigmentImporter<T: Default + Serialize + Deserialize<'static>, U: Serialize>
+pub trait FigmentExtractor<T: Default + Serialize + Deserialize<'static>>
 {
     /// Import settings from different sources using figment.
     /// The order of priority is as follows:
@@ -168,25 +184,25 @@ pub trait FigmentImporter<T: Default + Serialize + Deserialize<'static>, U: Seri
     ///
     /// # Arguments
     ///
-    /// * `runtime_environment` - The runtime environment.
-    /// * `file_path` - The path to the file with settings.
-    /// * `env_prefix` - The prefix for environment variables.
-    /// * `cli_args` - The command line arguments.
+    /// - `runtime_environment` - The runtime environment.
+    /// - `file_path` - The path to the file with settings.
+    /// - `env_prefix` - The prefix for environment variables.
+    /// - `cli_args` - The command line arguments.
     ///
     /// # Errors
     ///
-    /// If the import failed, then return `figment::Error`.
-    fn import(
-        runtime_environment: Option<&RuntimeEnvironmentType>,
+    /// If the import failed, then return [`FigmentExtractionFailedError`].
+    fn extract<U: Serialize>(
+        runtime_environment: Option<&RuntimeEnvironment>,
         file_path: Option<&str>,
         env_prefix: Option<&str>,
         cli_args: Option<&U>,
-    ) -> Result<T, Error>
+    ) -> Result<T, FigmentExtractionFailedError>
     {
         let mut figment = Figment::new();
 
         // Default settings.
-        figment = figment.merge( Serialized::defaults( T::default() ) );
+        // figment = figment.merge( Serialized::defaults( T::default() ) );
 
         // Profile is the runtime environment.
         if let Some( run_env ) = runtime_environment
@@ -223,6 +239,16 @@ pub trait FigmentImporter<T: Default + Serialize + Deserialize<'static>, U: Seri
         }
 
         // Extract settings to struct T.
-        Ok( figment.extract::<T>()? )
+        figment.extract::<T>().or_else( |err| {
+
+            // If extraction failed due to missing values try to join with default settings.
+            if err.missing()
+            {
+                eprintln!( "Failed to extract settings due to missing fields ({}).\nTrying to join with default settings...", err.kind );
+                figment = figment.join( Serialized::defaults( T::default() ) );
+            }
+
+            figment.extract::<T>().map_err( |err| FigmentExtractionFailedError { source: err } )
+        } )
     }
 }

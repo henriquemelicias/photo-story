@@ -1,2 +1,2 @@
 // Modules.
-pub mod models;
+pub mod entities;

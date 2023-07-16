@@ -4,4 +4,3 @@
 #![warn( clippy::complexity )]
 #![warn( clippy::perf )]
 
-pub mod settings;

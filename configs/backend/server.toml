@@ -1,11 +1,7 @@
 [default]
-addr = "127.0.0.1"
-port = 5555
-frontend_addr = "127.0.0.1"
-frontend_port = 5556
+sock_addr_v4 = "127.0.0.1:5555"
+frontend_url = "http://127.0.0.1:5556"
 
 [production]
-addr = "0.0.0.0"
-port = 9000
-frontend_addr = "0.0.0.0"
-frontend_port = 9001
+sock_addr_v4 = "0.0.0.0:9000"
+frontend_url = "http://0.0.0.0:9001"

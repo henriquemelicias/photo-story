@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::path::Path;
 
 use axum::{
     body::{Body, StreamBody},
@@ -9,8 +10,6 @@ use axum::{
 use dioxus::prelude::*;
 use futures::{stream, StreamExt};
 
-
-
 #[derive(Clone)]
 pub struct DioxusRenderState
 {
@@ -18,12 +17,13 @@ pub struct DioxusRenderState
     index_html_suffix: String,
 }
 
-pub(crate) async fn get_dioxus_render_state(static_dir: &str ) -> DioxusRenderState
+pub async fn get_dioxus_render_state(static_dir: &Path ) -> DioxusRenderState
 {
     // Get index file.
-    let index_html_s = tokio::fs::read_to_string( format!( "{}/index.html", static_dir ) )
+    let index_html_path = static_dir.join( "index.html" );
+    let index_html_s = tokio::fs::read_to_string( &index_html_path )
         .await
-        .expect( "Failed to read index.html. Did you choose the correct static directory?" );
+        .expect( &format!( "Failed to read index.html at path {:?}. Did you choose the correct static directory?", index_html_path ) );
 
     let ( index_html_prefix, index_html_suffix ) = index_html_s.split_once( r#"<div id="main">"# ).unwrap();
 
@@ -39,7 +39,7 @@ pub(crate) async fn get_dioxus_render_state(static_dir: &str ) -> DioxusRenderSt
 }
 
 #[allow( clippy::unused_async )]
-pub(crate) async fn dioxus_render_endpoint( State( state ): State<DioxusRenderState>, _req: Request<Body> ) -> impl IntoResponse
+pub async fn dioxus_render_endpoint( State( state ): State<DioxusRenderState>, _req: Request<Body> ) -> impl IntoResponse
 {
     let mut app_vdom = VirtualDom::new( frontend::presentation::ComponentApp );
     let _ = app_vdom.rebuild();

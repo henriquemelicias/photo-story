@@ -13,8 +13,9 @@ ssr = ["dioxus-ssr", "frontend"]
 
 [dependencies]
 frontend = { path = "../frontend", optional = true }
+common = { path = "../common" }
 thiserror = "1.0"
-anyhow = "1.0"
+error-stack = { version = "0.3", features = ["spantrace"] }
 dioxus = { git = "https://github.com/DioxusLabs/dioxus" }
 dioxus-router = { git = "https://github.com/DioxusLabs/dioxus" }
 dioxus-web = { git = "https://github.com/DioxusLabs/dioxus" }
@@ -35,3 +36,4 @@ tower-http = { version = "0.4", features = ["fs", "compression-br", "cors"] }
 tracing = "0.1"
 tracing-log = "0.1"
 tokio = { version = "1.26", features = ["full"] }
+url = { version = "2.4", features = ["serde"] }

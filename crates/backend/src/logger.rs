@@ -2,10 +2,6 @@
 //! The logger is based on the `tracing` crate.
 //!
 
-use std::str::FromStr;
-
-use anyhow::{Context, Result};
-
 pub use logger::middleware_http_tracing;
 use monitoring::logger;
 
@@ -15,7 +11,8 @@ use crate::settings;
 ///
 /// # Arguments
 ///
-/// * `log_level` - The log level. The value must be a string representation of `tracing_core::Level`: "ERROR", "WARN", "INFO", "DEBUG", "TRACE". The latter is more verbose than the former.
+/// * `app_name` - The name of the application.
+/// * `logger_settings` - The logger settings [`LoggerConfigs`](settings::LoggerConfigs).
 ///
 /// # Returns
 ///
@@ -26,30 +23,30 @@ use crate::settings;
 ///
 /// If the logger initialization fails, then the function returns an error.
 ///
-pub fn init( log_level: &str ) -> Result<( Option<logger::WorkerGuard>, Option<logger::WorkerGuard> )>
+pub fn init( app_name: &str, logger_settings: settings::LoggerConfigs ) -> ( Option<logger::WorkerGuard>, Option<logger::WorkerGuard> )
 {
-    let mut log_output_types = Vec::new();
+    let mut tracing_layers = Vec::new();
 
     // Emit logs to stdout if the setting is enabled.
-    if settings::get( &settings::LOGGER )?.is_stdout_emitted
+    if logger_settings.is_stdout_emitted
     {
-        log_output_types.push( logger::OutputType::Stdout );
+        tracing_layers.push( logger::EnableLayer::Stdout );
     }
 
-    let files_emitted_config = settings::get( &settings::LOGGER )?.files_emitted.clone();
+    let files_emitted_config = logger_settings.files_emitted;
 
     // Emit logs to file if the setting is enabled.
     if files_emitted_config.is_emitted
     {
-        log_output_types.push( logger::OutputType::File {
-            app_name:  &settings::get( &settings::GENERAL )?.app_name,
-            directory: &files_emitted_config.dir,
+        tracing_layers.push( logger::EnableLayer::File {
+            app_name,
+            directory: files_emitted_config.dir.as_ref(),
             prefix:    &files_emitted_config.files_prefix,
         } );
     }
 
-    Ok( logger::init(
-        &logger::Level::from_str( log_level ).context( "Failed to parse log level" )?,
-        &log_output_types,
-    ) )
+    logger::init(
+        &logger_settings.log_level,
+        &tracing_layers,
+    )
 }

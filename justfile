@@ -73,14 +73,6 @@ clean-logs:
 check:
     cargo clippy --locked -- -D warnings
 
-# Builds and opens documentation in-browser without the dependencies docs.
-docs:
-    cargo doc --open --no-deps
-
-# Builds and opens documentation in-browser with the dependencies docs.
-docs-deps:
-    cargo doc --open
-
 # Expands macro in file and outputs it to console.
 expand-macro FILE:
     rustc +nightly -Zunpretty=expanded {{FILE}}
