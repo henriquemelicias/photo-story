@@ -24,11 +24,9 @@ use wasm_bindgen::prelude::wasm_bindgen;
 pub fn hydrate()
 {
     use crate::presentation::AppComponent;
-    use leptos::{view, mount_to_body};
+    use leptos::{mount_to_body, view};
 
-    mount_to_body(move |cx| {
+    mount_to_body( move |cx| {
         view! { cx, <AppComponent/> }
-    });
+    } );
 }
-
-

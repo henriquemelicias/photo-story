@@ -1,11 +1,11 @@
 [default]
 sock_addr_v4 = "127.0.0.1:5556"
 proxy_url = "http://127.0.0.1:5555"
-static_dir = "./build/pkg"
-assets_dir = "./assets"
+static_dir = "./build/public/pkg"
+assets_dir = "./public/assets"
 
 [production]
 sock_addr_v4 = "0.0.0.0:9001"
 proxy_url = "http://0.0.0.0:9000"
-static_dir = "./static"
-assets_dir = "./assets"
+static_dir = "./public/static"
+assets_dir = "./public/assets"

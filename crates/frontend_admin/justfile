@@ -1,0 +1,12 @@
+#!/usr/bin/env just --justfile
+
+_default:
+    @just --list
+
+generate_tailwind_css STYLES_DIR:
+    # Generate tailwind css.
+    npx tailwindcss -i {{STYLES_DIR}}/tailwind.config.css --minify -c {{STYLES_DIR}}/tailwind.config.js -o {{STYLES_DIR}}/dist/tailwind.css
+    # Postcss tailwind css.
+    npx postcss --config {{STYLES_DIR}}/postcss.config.js {{STYLES_DIR}}/dist/tailwind.css -o {{STYLES_DIR}}/dist/tailwind-base.css
+    # Minify tailwind-base.css.
+    npx csso {{STYLES_DIR}}/dist/tailwind-base.css --comments none --output {{STYLES_DIR}}/dist/tailwind-base.css

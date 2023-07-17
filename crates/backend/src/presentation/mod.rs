@@ -1,4 +1,4 @@
 pub mod app;
-mod routes;
-mod middleware;
 mod by_features;
+mod middleware;
+mod routes;

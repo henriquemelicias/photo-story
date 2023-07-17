@@ -4,14 +4,12 @@
 #![warn( clippy::complexity )]
 #![warn( clippy::perf )]
 
-use std::{env, path::PathBuf};
-use std::cell::OnceCell;
-use std::sync::OnceLock;
+use std::{cell::OnceCell, env, path::PathBuf, sync::OnceLock};
 use thiserror::Error;
 
 use figment::{
-    Figment,
     providers::{Env, Format, Serialized, Toml},
+    Figment,
 };
 use serde::{Deserialize, Serialize};
 
@@ -59,10 +57,10 @@ impl From<&str> for RuntimeEnvironment
 pub enum GetConfigsDirPathError
 {
     /// The path is not a directory.
-    #[error("The path chosen with the {0} is not a directory: {1}")]
+    #[error( "The path chosen with the {0} is not a directory: {1}" )]
     NotADirectory( &'static str, PathBuf ),
     /// The directory does not exist.
-    #[error("The directory chosen with the {0} does not exist: {1}")]
+    #[error( "The directory chosen with the {0} does not exist: {1}" )]
     DirectoryDoesNotExist( &'static str, PathBuf ),
 }
 
@@ -80,15 +78,19 @@ pub enum GetConfigsDirPathError
 ///
 /// If the path is invalid, then the function returns [`GetConfigsDirPathError`].
 ///
-pub fn get_configs_dir_path( default_path: &str, env_key: &str, cli_arg: &Option<PathBuf> ) -> Result<PathBuf, GetConfigsDirPathError>
+pub fn get_configs_dir_path(
+    default_path: &str,
+    env_key: &str,
+    cli_arg: &Option<PathBuf>,
+) -> Result<PathBuf, GetConfigsDirPathError>
 {
     let mut path_source = "environment variable";
 
     // Get the path to the configuration files from the default path or environment variable. The latter overwrites the former.
-    let configs_dir = env::var( env_key ).unwrap_or_else(|_| {
+    let configs_dir = env::var( env_key ).unwrap_or_else( |_| {
         path_source = "default value";
         default_path.to_string()
-    });
+    } );
 
     // Substitute the default or environment variable value with the value from the command line.
     let configs_dir = cli_arg.as_ref().map_or_else(
@@ -113,11 +115,12 @@ pub fn get_configs_dir_path( default_path: &str, env_key: &str, cli_arg: &Option
 
 /// Error type for the function [`SettingsGetter::get`].
 #[derive(Error, Debug)]
-#[error("Failed to get settings from the setting struct {0} because the value is None.")]
+#[error( "Failed to get settings from the setting struct {0} because the value is None." )]
 pub struct SettingsGetError( &'static str );
 
 /// Trait for struct that can get the value from a settings struct.
-pub trait SettingsGetter<T> {
+pub trait SettingsGetter<T>
+{
     /// Get the value from `T`.
     ///
     /// # Errors
@@ -130,7 +133,8 @@ impl<T> SettingsGetter<T> for OnceCell<T>
 {
     fn get( &self ) -> Result<&T, SettingsGetError>
     {
-        self.get().ok_or_else( || SettingsGetError( std::any::type_name::<T>()) )
+        self.get()
+            .ok_or_else( || SettingsGetError( std::any::type_name::<T>() ) )
     }
 }
 
@@ -138,7 +142,8 @@ impl<T> SettingsGetter<T> for OnceLock<T>
 {
     fn get( &self ) -> Result<&T, SettingsGetError>
     {
-        self.get().ok_or_else( || SettingsGetError( std::any::type_name::<T>()) )
+        self.get()
+            .ok_or_else( || SettingsGetError( std::any::type_name::<T>() ) )
     }
 }
 
@@ -153,14 +158,11 @@ impl<T> SettingsGetter<T> for OnceLock<T>
 ///
 /// If the get failed or returns [`None`], then return [`SettingsGetError`].
 #[inline]
-pub fn get<T, U: SettingsGetter<T>>(settings: &U) -> Result<&T, SettingsGetError>
-{
-    settings.get()
-}
+pub fn get<T, U: SettingsGetter<T>>( settings: &U ) -> Result<&T, SettingsGetError> { settings.get() }
 
 /// Error type for the function [`FigmentExtractor::extract`].
 #[derive(Error, Debug)]
-#[error("Failed to extract settings due to the figment error: {source}.")]
+#[error( "Failed to extract settings due to the figment error: {source}." )]
 pub struct FigmentExtractionFailedError
 {
     #[from]
@@ -240,15 +242,19 @@ pub trait FigmentExtractor<T: Default + Serialize + Deserialize<'static>>
 
         // Extract settings to struct T.
         figment.extract::<T>().or_else( |err| {
-
             // If extraction failed due to missing values try to join with default settings.
             if err.missing()
             {
-                eprintln!( "Failed to extract settings due to missing fields ({}).\nTrying to join with default settings...", err.kind );
+                eprintln!(
+                    "Failed to extract settings due to missing fields ({}).\nTrying to join with default settings...",
+                    err.kind
+                );
                 figment = figment.join( Serialized::defaults( T::default() ) );
             }
 
-            figment.extract::<T>().map_err( |err| FigmentExtractionFailedError { source: err } )
+            figment
+                .extract::<T>()
+                .map_err( |err| FigmentExtractionFailedError { source: err } )
         } )
     }
 }

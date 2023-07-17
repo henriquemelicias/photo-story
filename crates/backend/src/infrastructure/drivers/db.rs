@@ -1,5 +1,5 @@
-use std::backtrace::Backtrace;
 use sqlx::{Executor, Pool, Transaction};
+use std::backtrace::Backtrace;
 use thiserror::Error;
 
 pub type DB = Pool<sqlx::Postgres>;

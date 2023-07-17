@@ -4,6 +4,8 @@ members = [
     # Full stack.
     "crates/backend",
     "crates/frontend",
+    "crates/frontend_admin",
+    "crates/frontend_admin/src-tauri",
     "crates/common",
     "crates/web_server",
     # Utils.
@@ -21,7 +23,7 @@ panic = "abort"
 codegen-units = 1
 # optimization for size ( more aggressive )
 opt-level = 'z'
-# link time optimization using using whole-program analysis
+# link time optimization using whole-program analysis
 lto = true
 # required for wasm-snip
 debug = true
@@ -29,6 +31,21 @@ debug = true
 [profile.non-wasm-release]
 inherits = "release"
 lto = true
+debug = false
+debug-assertions = false
+codegen-units = 1
+opt-level = 3
+
+[profile.release.package.frontend_admin]
+inherits = "release"
+debug = false
+debug-assertions = false
+codegen-units = 1
+opt-level = 3
+
+# Tauri.
+[profile.release.package.app]
+inherits = "release"
 debug = false
 debug-assertions = false
 codegen-units = 1
@@ -42,6 +59,6 @@ bin-features = ["ssr"]
 lib-features = ["hydrate"]
 bin-profile-release = "non-wasm-release"
 output-name = "frontend"
-site-root = "build"
-assets-dir = "assets"
+site-root = "./build/public"
+assets-dir = "./public"
 style-file = "./crates/frontend/styles/dist/tailwind.css"

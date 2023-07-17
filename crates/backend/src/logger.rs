@@ -23,7 +23,10 @@ use crate::settings;
 ///
 /// If the logger initialization fails, then the function returns an error.
 ///
-pub fn init( app_name: &str, logger_settings: settings::LoggerConfigs ) -> ( Option<logger::WorkerGuard>, Option<logger::WorkerGuard> )
+pub fn init(
+    app_name: &str,
+    logger_settings: settings::LoggerConfigs,
+) -> ( Option<logger::WorkerGuard>, Option<logger::WorkerGuard> )
 {
     let mut tracing_layers = Vec::new();
 
@@ -41,12 +44,9 @@ pub fn init( app_name: &str, logger_settings: settings::LoggerConfigs ) -> ( Opt
         tracing_layers.push( logger::EnableLayer::File {
             app_name,
             directory: files_emitted_config.dir.as_ref(),
-            prefix:    &files_emitted_config.files_prefix,
+            prefix: &files_emitted_config.files_prefix,
         } );
     }
 
-    logger::init(
-        &logger_settings.log_level,
-        &tracing_layers,
-    )
+    logger::init( &logger_settings.log_level, &tracing_layers )
 }

@@ -5,7 +5,7 @@ _default:
     @just --list
 
 # Env variables.
-export TRUNK_CONFIG := "./crates/frontend/Trunk.toml"
+export TRUNK_CONFIG := "./crates/frontend_admin/Trunk.toml"
 
 # Variables.
 BUILD_DIR := "./build"
@@ -15,7 +15,6 @@ build-release:
     #!/bin/bash
 
     BUILD_DIR={{BUILD_DIR}}
-    STATIC_DIR=$BUILD_DIR/static
 
     # Install npm dependencies.
     echo "Installing npm dependencies..."
@@ -35,24 +34,23 @@ build-release:
     mkdir -p $BUILD_DIR/logs
 
     # Copy necessary files to build directory.
-    rm -f $BUILD_DIR/justfile
     cp -r ./configs $BUILD_DIR
-    mv $BUILD_DIR/pkg $BUILD_DIR/static
+    mv $BUILD_DIR/public/pkg $BUILD_DIR/public/static
     cp -f ./target/non-wasm-release/backend $BUILD_DIR/backend
     cp -f ./target/server/non-wasm-release/web_server $BUILD_DIR/frontend_web_server
 
     # Optimize static files
-    find $STATIC_DIR/*.wasm -exec cp {} ./target/unoptimized.wasm \; -exec wasm-snip --snip-rust-panicking-code {} -o {} \; -exec wasm-opt -Oz {} -o {} \;
-    find $STATIC_DIR/*.js -exec npx terser {} -c -m --output {} \;
-    find $STATIC_DIR/*.css -exec npx csso {} --comments none --output {} \;
+    find $BUILD_DIR -name "*.wasm" -exec wasm-snip --snip-rust-panicking-code {} -o {} \; -exec wasm-opt -Oz {} -o {} \;
+    find $BUILD_DIR -name "*.js" -exec npx terser {} -c -m --output {} \;
+    find $BUILD_DIR -name "*.css" -exec npx csso {} --comments none --output {} \;
     # npx critical --b test -c tailwind-base*.css -w 320 -h 480 $STATIC_DIR/index.html -i > $STATIC_DIR/index.html
 
     echo "Compress wasm:"
-    npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.wasm || true
+    npx brotli-cli compress -q 11 --glob --bail false $BUILD_DIR/**/*.wasm || true
     echo "Compress js:"
-    npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.js || true
+    npx brotli-cli compress -q 11 --glob --bail false $BUILD_DIR/**/*.js || true
     echo "Compress css:"
-    npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.css || true
+    npx brotli-cli compress -q 11 --glob --bail false $BUILD_DIR/**/*.css || true
 
     echo "Build finished."
 
@@ -149,7 +147,7 @@ _grep_toml_config FILE GROUP_ENV CONFIG_VAR:
 
 _format_tailwindcss:
     #!/usr/bin/env sh
-    FILES=$(find -type f -path "./crates/frontend/*" -path "*.rs" | xargs grep -il -E 'html!\s?{') && \
+    FILES=$(find -type f -path "./crates/**/*" -path "*.rs" | xargs grep -il -E 'view!\s?{') && \
 
     # Cycle through each file that contains an html! macro.
     for FILE in $FILES; do

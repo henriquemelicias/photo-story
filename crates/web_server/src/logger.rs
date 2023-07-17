@@ -1,7 +1,7 @@
 pub use logger::middleware_http_tracing;
 use monitoring::logger;
 
-use crate::{settings};
+use crate::settings;
 pub use logger::Level;
 
 /// Initialize the logger.
@@ -17,7 +17,10 @@ pub use logger::Level;
 /// * If the log level could not be parsed
 /// * If failed to get the settings needed to initialize the logger.
 ///
-pub fn init( app_name: &str, logger_settings: settings::LoggerConfigs ) -> ( Option<logger::WorkerGuard>, Option<logger::WorkerGuard> )
+pub fn init(
+    app_name: &str,
+    logger_settings: settings::LoggerConfigs,
+) -> ( Option<logger::WorkerGuard>, Option<logger::WorkerGuard> )
 {
     let mut tracing_layers = Vec::new();
 
@@ -33,14 +36,11 @@ pub fn init( app_name: &str, logger_settings: settings::LoggerConfigs ) -> ( Opt
         tracing_layers.push( logger::EnableLayer::File {
             app_name,
             directory: files_emitted_config.dir.as_ref(),
-            prefix:    &files_emitted_config.files_prefix,
+            prefix: &files_emitted_config.files_prefix,
         } );
     }
 
     tracing_layers.push( logger::EnableLayer::SpanTraces );
 
-    logger::init(
-        &logger_settings.log_level,
-        &tracing_layers,
-    )
+    logger::init( &logger_settings.log_level, &tracing_layers )
 }

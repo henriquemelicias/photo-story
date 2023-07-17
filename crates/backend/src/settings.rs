@@ -6,24 +6,21 @@
 
 use std::{
     env,
-    net::Ipv4Addr,
+    net::{Ipv4Addr, SocketAddrV4},
     path::{Path, PathBuf},
-    sync::Mutex,
+    str::FromStr,
+    sync::{Mutex, OnceLock},
 };
 use thiserror::Error;
-use std::net::SocketAddrV4;
-use std::str::FromStr;
-use std::sync::OnceLock;
 
 use clap::Parser;
-use url::Url;
 use error_stack::{IntoReport, Report, ResultExt};
-use serde::{Deserialize, Serialize};
-use settings::validators;
-use settings::validators::DirectoryPath;
 use monitoring::logger;
+use serde::{Deserialize, Serialize};
+use settings::{validators, validators::DirectoryPath};
+use url::Url;
 
-pub use settings::{get_configs_dir_path};
+pub use settings::get_configs_dir_path;
 use settings::{FigmentExtractor, RuntimeEnvironment};
 
 /// The command line arguments.
@@ -78,7 +75,7 @@ pub struct CliArgs
 /// Error type for the [`init`] function.
 #[derive(Error, Debug)]
 #[error( "Failed to import the configs of {0}." )]
-pub struct InitImportConfigError(&'static str );
+pub struct InitImportConfigError( &'static str );
 
 /// Setup the global variables with settings.
 ///
@@ -94,7 +91,11 @@ pub struct InitImportConfigError(&'static str );
 ///
 /// If the settings import fails, then the function returns an error.
 ///
-pub fn init(configs_dir: &Path, env_prefix: &str, cli_args: &CliArgs ) -> Result<AllConfigs, Report<InitImportConfigError>>
+pub fn init(
+    configs_dir: &Path,
+    env_prefix: &str,
+    cli_args: &CliArgs,
+) -> Result<AllConfigs, Report<InitImportConfigError>>
 {
     /* General settings */
     let general_path = configs_dir.join( "general.toml" );
@@ -112,7 +113,9 @@ pub fn init(configs_dir: &Path, env_prefix: &str, cli_args: &CliArgs ) -> Result
         general_path,
         Some( &[env_prefix, "_GENERAL_"].concat() ),
         Some( cli_args ),
-    ).into_report().change_context( InitImportConfigError( "GENERAL" ))?;
+    )
+    .into_report()
+    .change_context( InitImportConfigError( "GENERAL" ) )?;
 
     // Get runtime environment from general settings.
     let runtime_env: RuntimeEnvironment = env::var( "BACKEND_GENERAL_RUN_ENV" ).map_or_else(
@@ -122,14 +125,23 @@ pub fn init(configs_dir: &Path, env_prefix: &str, cli_args: &CliArgs ) -> Result
 
     /* Server settings */
     let server_path = configs_dir.join( "server.toml" );
-    let server_path = if server_path.exists() { server_path.to_str() } else { None };
+    let server_path = if server_path.exists()
+    {
+        server_path.to_str()
+    }
+    else
+    {
+        None
+    };
 
     let server_configs = ServerConfigs::extract(
         Some( &runtime_env ),
         server_path,
         Some( &[env_prefix, "_SERVER_"].concat() ),
         Some( cli_args ),
-    ).into_report().change_context( InitImportConfigError( "SERVER" ))?;
+    )
+    .into_report()
+    .change_context( InitImportConfigError( "SERVER" ) )?;
 
     /* Logger settings */
     let logger_path = configs_dir.join( "logger.toml" );
@@ -147,7 +159,9 @@ pub fn init(configs_dir: &Path, env_prefix: &str, cli_args: &CliArgs ) -> Result
         logger_path,
         Some( &[env_prefix, "_LOGGER_"].concat() ),
         Some( cli_args ),
-    ).into_report().change_context( InitImportConfigError( "SERVER" ))?;
+    )
+    .into_report()
+    .change_context( InitImportConfigError( "SERVER" ) )?;
 
     Ok( AllConfigs {
         general: general_configs,
@@ -168,7 +182,7 @@ pub struct AllConfigs
 pub struct GeneralConfigs
 {
     pub app_name: String,
-    pub run_env: RuntimeEnvironment,
+    pub run_env:  RuntimeEnvironment,
 }
 
 impl Default for GeneralConfigs
@@ -187,7 +201,7 @@ impl FigmentExtractor<Self> for GeneralConfigs {}
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ServerConfigs
 {
-    pub sock_addr_v4:  SocketAddrV4,
+    pub sock_addr_v4: SocketAddrV4,
     pub frontend_url: Url,
 }
 
@@ -196,7 +210,7 @@ impl Default for ServerConfigs
     fn default() -> Self
     {
         Self {
-            sock_addr_v4: SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 5555 ),
+            sock_addr_v4: SocketAddrV4::new( Ipv4Addr::new( 127, 0, 0, 1 ), 5555 ),
             frontend_url: Url::parse( "http://127.0.0.1:5556" ).unwrap(),
         }
     }
@@ -207,9 +221,9 @@ impl FigmentExtractor<Self> for ServerConfigs {}
 #[derive(Serialize, Deserialize)]
 pub struct LoggerConfigs
 {
-    pub log_level:          logger::Level,
-    pub is_stdout_emitted:  bool,
-    pub files_emitted: LoggerFilesEmittedSubconfig,
+    pub log_level:         logger::Level,
+    pub is_stdout_emitted: bool,
+    pub files_emitted:     LoggerFilesEmittedSubconfig,
 }
 
 impl Default for LoggerConfigs
@@ -217,9 +231,9 @@ impl Default for LoggerConfigs
     fn default() -> Self
     {
         Self {
-            log_level:         logger::Level::from_str( "debug").unwrap(),
+            log_level:         logger::Level::from_str( "debug" ).unwrap(),
             is_stdout_emitted: true,
-            files_emitted:     LoggerFilesEmittedSubconfig::default()
+            files_emitted:     LoggerFilesEmittedSubconfig::default(),
         }
     }
 }
@@ -229,9 +243,9 @@ impl FigmentExtractor<Self> for LoggerConfigs {}
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LoggerFilesEmittedSubconfig
 {
-    pub is_emitted: bool,
-    pub dir: validators::DirectoryPath,
-    pub files_prefix: String
+    pub is_emitted:   bool,
+    pub dir:          validators::DirectoryPath,
+    pub files_prefix: String,
 }
 
 impl Default for LoggerFilesEmittedSubconfig
@@ -239,12 +253,15 @@ impl Default for LoggerFilesEmittedSubconfig
     fn default() -> Self
     {
         Self {
-            is_emitted: true,
-            dir: PathBuf::from("./logs2").try_into().unwrap_or_else( |err| {
-                println!( "Failed to parse the default value for the logger.files_emitted.dir. Error: {}", err );
+            is_emitted:   true,
+            dir:          PathBuf::from( "./logs2" ).try_into().unwrap_or_else( |err| {
+                println!(
+                    "Failed to parse the default value for the logger.files_emitted.dir. Error: {}",
+                    err
+                );
                 validators::DirectoryPath::prompt()
-            }),
-            files_prefix: "backend.dev".to_string()
+            } ),
+            files_prefix: "backend.dev".to_string(),
         }
     }
 }

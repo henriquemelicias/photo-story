@@ -19,24 +19,20 @@
 //! );
 //! ```
 
-use std::error::Error;
-use std::fmt::Display;
-use std::path::Path;
-use std::str::FromStr;
-use std::time::Duration;
+use std::{error::Error, fmt::Display, path::Path, str::FromStr, time::Duration};
 
 use axum::{
     body::{Body, BoxBody, Bytes},
     http::{HeaderMap, Request, Response},
     Router,
 };
+use serde::{Deserialize, Serialize};
 use tower_http::{classify::ServerErrorsFailureClass, trace as http_trace};
 use tracing::Span;
 pub use tracing_appender::non_blocking::WorkerGuard;
 use tracing_bunyan_formatter::BunyanFormattingLayer;
-use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
 
 /// Wrapper enum for tracing level.
 pub struct Level( tracing::Level );
@@ -66,10 +62,10 @@ impl FromStr for Level
         {
             "TRACE" => Ok( Self( tracing::Level::TRACE ) ),
             "DEBUG" => Ok( Self( tracing::Level::DEBUG ) ),
-            "INFO"  => Ok( Self( tracing::Level::INFO  ) ),
-            "WARN"  => Ok( Self( tracing::Level::WARN  ) ),
+            "INFO" => Ok( Self( tracing::Level::INFO ) ),
+            "WARN" => Ok( Self( tracing::Level::WARN ) ),
             "ERROR" => Ok( Self( tracing::Level::ERROR ) ),
-            _       => Err( LevelParseError( level ) ),
+            _ => Err( LevelParseError( level ) ),
         }
     }
 }
@@ -134,10 +130,7 @@ pub enum EnableLayer<'a>
 ///
 /// see [`crate::logger`] for an example.
 ///
-pub fn init(
-    level_filter: &Level,
-    layers_enabled: &Vec<EnableLayer>,
-) -> ( Option<WorkerGuard>, Option<WorkerGuard> )
+pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Option<WorkerGuard>, Option<WorkerGuard> )
 {
     // Use tracing::level
     let level_filter = level_filter.0;
@@ -186,9 +179,9 @@ pub fn init(
 
             // Capture SpanTraces.
             EnableLayer::SpanTraces =>
-                {
-                    layers.push( tracing_error::ErrorLayer::default().boxed() );
-                }
+            {
+                layers.push( tracing_error::ErrorLayer::default().boxed() );
+            }
         }
     }
 
@@ -218,7 +211,8 @@ pub fn init(
 /// The router with the instrumentation added.
 ///
 pub fn middleware_http_tracing<T>( router: Router<T> ) -> Router<T>
-where T: Clone + Send + Sync + 'static
+where
+    T: Clone + Send + Sync + 'static,
 {
     let trace_layer = http_trace::TraceLayer::new_for_http()
         .make_span_with( |_request: &Request<Body>| {

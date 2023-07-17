@@ -1,0 +1,65 @@
+{
+  "build": {
+    "beforeBuildCommand": "mkdir -p ../../target/tauri; trunk build --release --filehash false",
+    "beforeDevCommand": "mkdir -p ../../target/tauri; trunk serve --port 5557",
+    "devPath": "http://localhost:5557",
+    "distDir": "../../../target/tauri/frontend_admin"
+  },
+  "package": {
+    "productName": "photo-story-admin",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false
+    },
+    "bundle": {
+      "active": true,
+      "category": "DeveloperTool",
+      "copyright": "",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "identifier": "pt.henrique-melicias.photo-story-admin",
+      "longDescription": "",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [],
+      "shortDescription": "",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 600,
+        "resizable": true,
+        "title": "Photo Story",
+        "width": 800
+      }
+    ]
+  }
+}

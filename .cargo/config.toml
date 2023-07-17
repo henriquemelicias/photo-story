@@ -6,3 +6,6 @@ rustflags = ["-C", "link-arg=-fuse-ld=/usr/local/bin/mold"]
 #[target.wasm32-unknown-unknown]
 #linker = "clang"
 #rustflags = ["-C", "link-arg=-fuse-ld=/usr/local/bin/mold"]
+
+[target.all]
+lto = true

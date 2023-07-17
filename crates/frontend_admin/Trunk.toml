@@ -1,0 +1,28 @@
+[build]
+target = "./index.html"
+dist = "../../target/tauri/frontend_admin"
+
+[watch]
+ignore = ["./src-tauri"]
+watch = [
+    "./index.html",
+    "./src",
+    "../../public/assets"
+]
+
+[[proxy]]
+backend = "http://localhost:5555"
+rewrite = "/api"
+
+[clean]
+dist = "../../target/tauri/frontend_admin"
+
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = [
+    "-c",
+    "just -f $TRUNK_SOURCE_DIR/justfile generate_tailwind_css ./styles"
+]
+
+

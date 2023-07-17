@@ -1,23 +1,26 @@
 #![allow( non_snake_case )]
 #![allow( clippy::module_name_repetitions )]
 
-use leptos::{component, create_signal, IntoView, Scope, SignalUpdate, view, Errors};
-use leptos_meta::{Title, provide_meta_context, Style, Stylesheet, Meta, Html};
+use leptos::{component, create_signal, view, Errors, IntoView, Scope, SignalUpdate};
+use leptos_meta::{provide_meta_context, Html, Meta, Style, Stylesheet, Title};
 use leptos_router::Router;
 
+pub mod components;
 pub mod layout;
 pub mod routes;
-pub mod components;
 
+use crate::presentation::{
+    components::error_template::ErrorComponent,
+    layout::{ComponentFooter, ComponentHeader},
+};
 use components::error_template::AppErrorComponent;
-use crate::presentation::components::error_template::ErrorComponent;
 use routes::ComponentRouter;
-use crate::presentation::layout::{ComponentFooter, ComponentHeader};
 
 #[component]
-pub fn AppComponent(cx: Scope) -> impl IntoView {
+pub fn AppComponent( cx: Scope ) -> impl IntoView
+{
     // Provides context that manages stylesheets, titles, meta tags, etc.
-    provide_meta_context(cx);
+    provide_meta_context( cx );
 
     view! {
         cx,
@@ -46,7 +49,6 @@ pub fn AppComponent(cx: Scope) -> impl IntoView {
     }
 }
 
-
 // #[component]
 // fn TailwindStyle( _cx: Scope) -> impl IntoView {
 //     view! { cx, }
@@ -60,8 +62,9 @@ pub fn AppComponent(cx: Scope) -> impl IntoView {
 // }
 
 #[component]
-fn TailwindStyle(cx: Scope) -> impl IntoView {
-    let style = include_str!("../../styles/dist/tailwind.css");
+fn TailwindStyle( cx: Scope ) -> impl IntoView
+{
+    let style = include_str!( "../../styles/dist/tailwind.css" );
     view! { cx,
         <Style>
             {style}
@@ -71,10 +74,11 @@ fn TailwindStyle(cx: Scope) -> impl IntoView {
 
 /// Renders the home page of your application.
 #[component]
-fn HomePage(cx: Scope) -> impl IntoView {
+fn HomePage( cx: Scope ) -> impl IntoView
+{
     // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(cx, 0);
-    let on_click = move |_| set_count.update(|count| *count += 1);
+    let ( count, set_count ) = create_signal( cx, 0 );
+    let on_click = move |_| set_count.update( |count| *count += 1 );
 
     view! { cx,
         <h1>"Welcome to Leptos!"</h1>

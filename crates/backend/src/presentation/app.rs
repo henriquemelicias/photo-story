@@ -1,12 +1,10 @@
-use axum::http::HeaderValue;
-use axum::Router;
+use axum::{http::HeaderValue, Router};
 use tower_http::{compression::CompressionLayer, cors::CorsLayer};
 
-use crate::presentation::routes;
-use crate::logger;
+use crate::{logger, presentation::routes};
 use url::Url;
 
-#[allow(clippy::unused_async)]
+#[allow( clippy::unused_async )]
 pub async fn create( frontend_url: Url ) -> Option<Router>
 {
     // Main router.

@@ -1,11 +1,10 @@
-use axum::Json;
-use axum::response::IntoResponse;
-use serde::{Serialize, Deserialize};
+use axum::{response::IntoResponse, Json};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddPhotoInput
 {
-    pub url: String,
+    pub url:   String,
     pub title: String,
 }
 
