@@ -1,128 +1,162 @@
-use dioxus::prelude::*;
+use leptos::{component, IntoView, Scope, view};
 
 #[must_use]
-pub fn ComponentHeader( cx: Scope ) -> Element
+#[component]
+pub fn ComponentHeader( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view! {
+        cx,
 
-        header { Navbar {} }
-    ) )
+        <header>
+            <Navbar />
+        </header>
+    }
 }
 
-fn Navbar( cx: Scope ) -> Element
+#[component]
+fn Navbar( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view! {
+        cx,
 
-        nav { class: "navbar bg-base-100",
+        <nav class="navbar bg-base-100">
 
-            NavbarStart {}
-            NavbarCenter {}
-            NavbarEnd {}
-        }
-    ) )
+            <NavbarStart />
+            <NavbarCenter />
+            <NavbarEnd />
+        </nav>
+    }
 }
 
-fn NavbarStart( cx: Scope ) -> Element
+#[component]
+fn NavbarStart( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view! {
+        cx,
 
-        div { class: "navbar-start",
-
-            NavbarDropdownMenu {}
-            a { class: "btn btn-ghost normal-case text-xl", "DaisyUI" }
-        }
-    ) )
+        <div class="navbar-start">
+            <NavbarDropdownMenu />
+            <a class="btn btn-ghost normal-case text-xl">
+                "DaisyUI"
+            </a>
+        </div>
+    }
 }
 
-fn NavbarDropdownMenu( cx: Scope ) -> Element
+#[component]
+fn NavbarDropdownMenu( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view! {
+        cx,
 
-        div { class: "dropdown",
+        <div class="dropdown">
 
-            label { class: "btn btn-ghost lg:hidden", tabindex: "0", SvgNavbarDropdownMenu {} }
+            <label class="btn btn-ghost lg:hidden" tabindex="0">
+                <SvgNavbarDropdownMenu />
+            </label>
 
             // Menu.
-            ul {
-                class: "menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-52",
-                tabindex: "0",
+            <ul
+                class="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-52"
+                tabindex="0"
+            >
 
-                // Menu entries.
-                li { a { "Item 1" } }
-                // Submenu.
-                li { tabindex: "0",
+                // Menu entry 1.
+                <li><a>"Item 1"</a></li>
+                // Menu entry 2: submenu.
+                <li tabindex="0">
 
-                    a { class: "justify-between",
-
+                    <a class="justify-between">
                         "Parent"
-                        SvgNavbarMenuEntry {}
-                    }
+                        <SvgNavbarMenuEntry />
+                    </a>
 
-                    ul { class: "p-2",
-
-                        li { a { "Submenu Item 1" } }
-                        li { a { "Submenu Item 2" } }
-                    }
-                }
-                li { a { "Item 3" } }
-            }
-        }
-    ) )
+                    <ul class="p-2">
+                        <li><a>"Submenu Item 1"</a></li>
+                        <li><a>"Submenu Item 2"</a></li>
+                    </ul>
+                </li>
+                // Menu entry 3.
+                <li><a>"Item 3"</a></li>
+            </ul>
+        </div>
+    }
 }
 
-fn SvgNavbarDropdownMenu( cx: Scope ) -> Element
+#[component]
+fn SvgNavbarDropdownMenu( cx: Scope ) -> impl IntoView
 {
-    cx.render(rsx!(
+    view! {
+        cx,
 
-        svg { class: "h-5 w-5", fill: "none", stroke: "currentColor", view_box: "0 0 24 24", path { stroke_linecap: "round", stroke_linejoin: "round", stroke_width: "2", d: "M4 6h16M4 12h8m-8 6h16" } }
-    ))
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" view_box="0 0 24 24">
+            <path stroke_linecap="round" stroke_linejoin="round" stroke_width="2" d="M4 6h16M4 12h8m-8 6h16"/>
+        </svg>
+    }
 }
 
-fn SvgNavbarMenuEntry( cx: Scope ) -> Element
+#[component]
+fn SvgNavbarMenuEntry( cx: Scope ) -> impl IntoView
 {
-    cx.render(rsx!(
+    view! {
+        cx,
 
-        svg { class: "fill-current", width: "24", height: "24", view_box: "0 0 24 24", path { d: "M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" } }
-    ))
+        <svg class="fill-current" width="24" height="24" view_box="0 0 24 24">
+            <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/>
+        </svg>
+    }
 }
 
-fn NavbarCenter( cx: Scope ) -> Element
+#[component]
+fn NavbarCenter( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view! {
+        cx,
 
-        div { class: "navbar-center hidden lg:flex", NavbarHorizontalMenu {} }
-    ) )
+        <div class="navbar-center hidden lg:flex">
+            <NavbarHorizontalMenu />
+        </div>
+    }
 }
 
-fn NavbarHorizontalMenu( cx: Scope ) -> Element
+#[component]
+fn NavbarHorizontalMenu( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view!{
+        cx,
 
-        ul { class: "menu menu-horizontal px-1",
+        <ul class="menu menu-horizontal px-1">
 
-            li { a { "Item 1" } }
-            li { tabindex: "0",
-
-                a {
+            // Menu entry 1.
+            <li><a>"Item 1"</a></li>
+            // Menu entry 2: submenu.
+            <li tabindex="0">
+                <a>
                     "Parent"
-                    SvgNavbarMenuEntry {}
-                }
+                    <SvgNavbarMenuEntry />
+                </a>
 
-                ul { class: "p-2",
-
-                    li { a { "Submenu Item 1" } }
-                    li { a { "Submenu Item 2" } }
-                }
-            }
-            li { a { "Item 3" } }
-        }
-    ) )
+                <ul class="p-2">
+                    <li><a>"Submenu Item 1"</a></li>
+                    <li><a>"Submenu Item 2"</a></li>
+                </ul>
+            </li>
+            // Menu entry 3.
+            <li><a>"Item 3"</a></li>
+        </ul>
+    }
 }
 
-fn NavbarEnd( cx: Scope ) -> Element
+#[component]
+fn NavbarEnd( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view! {
+        cx,
 
-        div { class: "navbar-end", a { class: "btn", "Get started" } }
-    ) )
+        <div class="navbar-end">
+            <a class="btn">
+                "Get started"
+            </a>
+        </div>
+    }
 }

@@ -11,7 +11,9 @@ pub use error::Error;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::ops::Deref;
 use std::str::FromStr;
+use axum::ServiceExt;
 use error_stack::{IntoReport, report, Report, ResultExt};
+use leptos::LeptosOptions;
 use thiserror::Error;
 use tracing::instrument;
 
@@ -46,12 +48,12 @@ pub enum InitServerError
 /// * `server_settings` - The server settings [`ServerConfigs`].
 ///
 #[tokio::main]
-#[instrument(name = "APP", err, skip(server_settings))]
-pub async fn init_server( server_settings: settings::ServerConfigs ) -> Result<(), Report<InitServerError>>
+#[instrument(name = "APP", err, skip_all)]
+pub async fn init_server( server_settings: settings::ServerConfigs, leptos_options: LeptosOptions ) -> Result<(), Report<InitServerError>>
 {
     tracing::info!( "Initializing server the with settings: [ sock_addr={}, proxy_url={}, static_dir={}, assets_dir={} ].", server_settings.sock_addr_v4, server_settings.proxy_url.as_str(), server_settings.static_dir, server_settings.assets_dir );
 
-    let app = app::create( server_settings.static_dir, server_settings.assets_dir, server_settings.proxy_url ).await.ok_or_else(|| report!( InitServerError::AppRouterCreationFailed ) )?;
+    let app = app::create( server_settings.static_dir, server_settings.assets_dir, server_settings.proxy_url, leptos_options ).await.ok_or_else(|| report!( InitServerError::AppRouterCreationFailed ) )?;
 
     let server = axum::Server::try_bind( &server_settings.sock_addr_v4.into() )
         .into_report()

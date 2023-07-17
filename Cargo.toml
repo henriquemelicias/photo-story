@@ -34,3 +34,14 @@ debug-assertions = false
 codegen-units = 1
 opt-level = 3
 
+[[workspace.metadata.leptos]]
+name = "photo-story"
+bin-package = "web_server"
+lib-package = "frontend"
+bin-features = ["ssr"]
+lib-features = ["hydrate"]
+bin-profile-release = "non-wasm-release"
+output-name = "frontend"
+site-root = "build"
+assets-dir = "assets"
+style-file = "./crates/frontend/styles/dist/tailwind.css"

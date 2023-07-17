@@ -1,31 +1,38 @@
 // use crate::presentation::models;
 
-use dioxus::prelude::*;
-use dioxus_router::{Link, Route, Router};
+use leptos::{IntoView, Scope, view, component};
+use leptos_router::{Route, Routes};
 
 #[must_use]
-pub fn ComponentRouter( cx: Scope ) -> Element
+#[component]
+pub fn ComponentRouter( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view! {
+        cx,
 
-        Router { 
-            Route { to: "/", ComponentHome {} }
-            Route { to: "", ComponentNotFound {} }
-        }
-    ) )
+        <Routes>
+            <Route path="/" view=|cx| view! { cx, <Home/> }/>
+            // <Route path="" view=|cx| view! { cx, <NotFound/> }/>
+        </Routes>
+    }
 }
 
-fn ComponentHome( cx: Scope ) -> Element
+#[component]
+fn Home(cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view! {
+        cx,
 
-        h1 { class: "text-9xl font-bold underline",
+        <h1 class="text-9xl font-bold underline">
 
             "Home"
-            br {}
-            Link { to: "/hello-server", "click here to go to hello-server" }
-        }
-    ) )
+            <br/>
+            <a href="/hello-server">
+                "click here to go to hello-server"
+            </a>
+        </h1>
+    }
 }
 
-fn ComponentNotFound( cx: Scope ) -> Element { cx.render( rsx!( h1 { "404" } ) ) }
+#[component]
+fn NotFound( cx: Scope ) -> impl IntoView { view!{ cx, <h1>"404"</h1> } }

@@ -1,56 +1,59 @@
-use dioxus::prelude::*;
+use leptos::{component, IntoView, Scope, view};
 
 #[must_use]
-pub fn ComponentFooter( cx: Scope ) -> Element { cx.render( rsx!( FooterTop {} ) ) }
+#[component]
+pub fn ComponentFooter( cx: Scope ) -> impl IntoView { view!{ cx, <FooterTop/> } }
 
-fn FooterTop( cx: Scope ) -> Element
+#[component]
+fn FooterTop( cx: Scope ) -> impl IntoView
 {
-    cx.render( rsx!(
+    view!{
+        cx,
 
-        footer { class: "footer p-10 bg-base-200 text-base-content flex justify-between flex-wrap",
+        <footer class="footer p-10 bg-base-200 text-base-content flex justify-between flex-wrap">
 
-            div {
-                span { class: "footer-title", "Services" }
-                a { class: "link link-hover", "Branding" }
-                a { class: "link link-hover", "Marketing" }
-                a { class: "link link-hover", "Design" }
-                a { class: "link link-hover", "Development" }
-            }
+            <div>
+                <span class="footer-title">"Services"</span>
+                <a class="link link-hover">"Branding"</a>
+                <a class="link link-hover">"Marketing"</a>
+                <a class="link link-hover">"Design"</a>
+                <a class="link link-hover">"Development"</a>
+            </div>
 
-            div {
-                span { class: "footer-title", "Company" }
-                a { class: "link link-hover", "About us" }
-                a { class: "link link-hover", "Contact" }
-                a { class: "link link-hover", "Jobs" }
-                a { class: "link link-hover", "Press Kit" }
-            }
+            <div>
+                <span class="footer-title">"Company"</span>
+                <a class="link link-hover">"About us"</a>
+                <a class="link link-hover">"Contact"</a>
+                <a class="link link-hover">"Jobs"</a>
+                <a class="link link-hover">"Press Kit"</a>
+            </div>
 
-            div {
-                span { class: "footer-title", "Legal" }
-                a { class: "link link-hover", "Terms of Service" }
-                a { class: "link link-hover", "Privacy Policy" }
-                a { class: "link link-hover", "Cookie Policy" }
-            }
+            <div>
+                <span class="footer-title">"Legal"</span>
+                <a class="link link-hover">"Terms of Service"</a>
+                <a class="link link-hover">"Privacy Policy"</a>
+                <a class="link link-hover">"Cookie Policy"</a>
+            </div>
 
-            div {
-                span { class: "footer-title", "Newsletter" }
-                div { class: "form-control w-100",
+            <div>
+                <span class="footer-title">"Newsletter"</span>
+                <div class="form-control w-100">
+                    <label class="label">
+                        <span class="label-text">"Enter your email address"</span>
+                    </label>
 
-                    label { class: "label", span { class: "label-text", "Enter your email address" } }
+                    <div class="relative">
+                        <input class="input input-bordered w-100" placeholder="Email address"></input>
 
-                    div { class: "relative",
-
-                        input { class: "input input-bordered w-100", placeholder: "Email address" }
-
-                        button {
-                            class: "absolute btn btn-primary btn-sm",
-                            style: "right: 0.5rem; top: 0.5rem;",
-
+                        <button
+                            class="absolute btn btn-primary btn-sm"
+                            style="right: 0.5rem; top: 0.5rem;"
+                        >
                             "Subscribe"
-                        }
-                    }
-                }
-            }
-        }
-    ) )
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    }
 }

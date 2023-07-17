@@ -1,9 +1,3 @@
-use std::{
-    net::{IpAddr, Ipv6Addr, SocketAddr},
-    str::FromStr,
-};
-use std::path::{Path, PathBuf};
-
 use axum::{
     body::Body,
     extract::State,
@@ -19,15 +13,18 @@ use tower_http::{
     cors::CorsLayer,
     services::{ServeDir, ServeFile},
 };
-
-#[cfg(feature = "ssr")]
-use axum::handler::Handler;
-use url::Url;
-
 use settings::validators;
 
 #[cfg(feature = "ssr")]
-use crate::ssr;
+use frontend::presentation::AppComponent;
+use axum::handler::Handler;
+use axum::routing::post;
+use leptos::{LeptosOptions, view};
+use leptos_axum::{generate_route_list, LeptosRoutes};
+use tower::Service;
+use url::Url;
+use crate::ssr::file_and_error_handler;
+
 
 #[derive(Debug, Clone)]
 struct ReverseProxyState
@@ -36,8 +33,11 @@ struct ReverseProxyState
     api_url: Url,
 }
 
+#[derive(Debug, Clone)]
+struct EraseState;
+
 /// Create the main router.
-pub async fn create(static_dir: validators::DirectoryPath, assets_dir: validators::DirectoryPath, api_url: Url ) -> Option<Router>
+pub async fn create(static_dir: validators::DirectoryPath, assets_dir: validators::DirectoryPath, api_url: Url, leptos_options: LeptosOptions ) -> Option<Router>
 {
     // Main router.
     let mut app = Router::new();
@@ -49,8 +49,6 @@ pub async fn create(static_dir: validators::DirectoryPath, assets_dir: validator
         api_url
     };
 
-    let api_router = Router::new().fallback( api_reverse_proxy_handler ).with_state(reverse_proxy_state);
-    app = app.nest( "/api", api_router );
 
     // Robot.txt file get service.
     let robots_path = assets_dir.as_ref().join( "robots.txt" );
@@ -73,13 +71,19 @@ pub async fn create(static_dir: validators::DirectoryPath, assets_dir: validator
         .route( "/robots.txt", robots_file )
         .route( "/favicon.ico", favicon_file )
         .nest_service( "/static", serve_static_dir )
-        .nest_service( "/assets", serve_assets_dir )
-        .layer( CompressionLayer::new().br( true ).no_gzip().no_deflate() );
+        .nest_service( "/assets", serve_assets_dir );
+
+    // API Route handled by reverse proxy.
+    let api_router = Router::new().fallback( api_reverse_proxy_handler ).with_state(reverse_proxy_state);
+    app = app.nest( "/api", api_router );
 
     // Server side rendering.
     #[cfg(feature = "ssr")]
     {
-        app = ssr( app, static_dir.as_ref() ).await;
+        let routes = generate_route_list(|cx| view!{cx, <AppComponent/>}).await;
+        app = app.leptos_routes( &leptos_options, routes, |cx| view!{cx, <AppComponent/>} )
+            .route( "/leptos/*path", post( leptos_axum::handle_server_fns ) )
+            .fallback( file_and_error_handler );
     }
 
     // Http tracing logs middleware layer.
@@ -91,22 +95,10 @@ pub async fn create(static_dir: validators::DirectoryPath, assets_dir: validator
     // Cors.
     app = app.layer( CorsLayer::permissive() );
 
+    // Add state so it turns from Router<T> (T means that it needs state) to Router<()>. This needs to be the last call to app before returning to make sure it is able to me turned into a service.
+    let app = app.with_state( leptos_options );
+
     Some( app )
-}
-
-/// Server side rendering.
-///
-/// # Arguments
-///
-/// * `app` - The main router.
-#[cfg(feature = "ssr")]
-async fn ssr( mut app: Router, static_dir: &Path ) -> Router
-{
-    let dioxus_state = ssr::get_dioxus_render_state( static_dir ).await;
-    let dioxus_renderer = ssr::dioxus_render_endpoint.with_state( dioxus_state );
-    app = app.fallback_service( dioxus_renderer );
-
-    app
 }
 
 /// Reverse proxy requests to the API on the backend.

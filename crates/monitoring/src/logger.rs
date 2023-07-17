@@ -217,7 +217,8 @@ pub fn init(
 ///
 /// The router with the instrumentation added.
 ///
-pub fn middleware_http_tracing( router: Router ) -> Router
+pub fn middleware_http_tracing<T>( router: Router<T> ) -> Router<T>
+where T: Clone + Send + Sync + 'static
 {
     let trace_layer = http_trace::TraceLayer::new_for_http()
         .make_span_with( |_request: &Request<Body>| {

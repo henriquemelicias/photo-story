@@ -22,38 +22,35 @@ build-release:
     npm install --no-audit --no-fund
     echo
 
-    # Create new final directory.
-    rm -rf $BUILD_DIR
-    mkdir -p $BUILD_DIR/static $BUILD_DIR/logs
-
-    # Build backend and static files.
+    # Build backend.
     RUSTFLAGS="-C target-cpu=native" cargo build --profile non-wasm-release --bin backend
-    RUSTFLAGS="-C target-cpu=native" cargo build --profile non-wasm-release --features ssr --bin web_server
-    trunk build --release --features ssr ./crates/frontend/trunk_index2.html --dist $STATIC_DIR --public-url /static/
-    # TODO test these: -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
 
-    # Remove assets directory on the static folder (used when using CSR).
-    rm -r $STATIC_DIR/assets
+    # Pre-build tailwind files and optimize them.
+    just -f ./crates/frontend/justfile generate_tailwind_css ./styles
 
-    # Copy necessary files to final directory.
-    cp -r ./assets $BUILD_DIR
-    rm $BUILD_DIR/assets/justfile
+    # Build frontend.
+    cargo leptos build --release
+
+    # Add directories to build directory.
+    mkdir -p $BUILD_DIR/logs
+
+    # Copy necessary files to build directory.
+    rm -f $BUILD_DIR/justfile
     cp -r ./configs $BUILD_DIR
+    mv $BUILD_DIR/pkg $BUILD_DIR/static
     cp -f ./target/non-wasm-release/backend $BUILD_DIR/backend
-    cp -f ./target/non-wasm-release/web_server $BUILD_DIR/frontend_web_server
+    cp -f ./target/server/non-wasm-release/web_server $BUILD_DIR/frontend_web_server
 
     # Optimize static files
     find $STATIC_DIR/*.wasm -exec cp {} ./target/unoptimized.wasm \; -exec wasm-snip --snip-rust-panicking-code {} -o {} \; -exec wasm-opt -Oz {} -o {} \;
     find $STATIC_DIR/*.js -exec npx terser {} -c -m --output {} \;
-    find $STATIC_DIR/snippets/**/*.js -exec npx terser {} -c -m --output {} \;
     find $STATIC_DIR/*.css -exec npx csso {} --comments none --output {} \;
     # npx critical --b test -c tailwind-base*.css -w 320 -h 480 $STATIC_DIR/index.html -i > $STATIC_DIR/index.html
 
     echo "Compress wasm:"
     npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.wasm || true
-    echo "Compress js and snippets js:"
+    echo "Compress js:"
     npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.js || true
-    npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/snippets/**/*.js || true
     echo "Compress css:"
     npx brotli-cli compress -q 11 --glob --bail false $STATIC_DIR/*.css || true
 
@@ -121,15 +118,9 @@ install-udeps:
 npm-check-updates:
     npx npm-check-updates -u
 
-# Serve dioxus frontend csr with hot-reloading.
-run-frontend-csr PORT="5556":
-    cd {{justfile_directory()}}/crates/frontend; dioxus serve --port {{PORT}} --hot-reload
-
 # Run frontend ssr.
-run-frontend-ssr PORT="5556":
-    # Stop process using same port.
-    fuser -k {{PORT}}/tcp || true
-    trunk serve --port {{PORT}} --features "ssr"
+run-frontend-ssr:
+    cargo leptos serve --hot-reload
 
 # Run backend.
 run-backend ENV="development" PORT="5555" FRONTEND_PORT="5556" LOG_LEVEL="trace":
@@ -157,28 +148,25 @@ _grep_toml_config FILE GROUP_ENV CONFIG_VAR:
     grep -A 100 "^\[{{GROUP_ENV}}\]" {{FILE}} | grep -m 1 -oP '^{{CONFIG_VAR}}\s?=\s?"?\K[^"?]+'
 
 _format_tailwindcss:
-    #!/bin/bash
-    FILES=$(find -type f -path "./crates/frontend/*" -path "*.rs" | xargs grep -il -E 'rsx!\s?\(') && \
+    #!/usr/bin/env sh
+    FILES=$(find -type f -path "./crates/frontend/*" -path "*.rs" | xargs grep -il -E 'html!\s?{') && \
 
     # Cycle through each file that contains an html! macro.
     for FILE in $FILES; do
-        echo "Formatting $FILE"
 
         # Get each class="..." present.
-        CLASSES=$(grep -oE 'class:\s?"[^"|(.)]*"' $FILE)
+        CLASSES=$(grep -oE 'class\s?=\s?"[^"|(.)]*"' $FILE)
 
         IFS=$'\n' # make newlines the only separator, needs to be reset.
 
         # Cycle through each class.
         for CLASS in $CLASSES; do
 
-            CLASS=$(echo $CLASS | sed -E 's/class:\s?/class=/g')
-
             # Prettify class.
-            CLASS_PRETTY=$(echo "<img $CLASS>" | npx prettier --plugin prettier-plugin-tailwindcss --parser html --bracket-same-line true --print-width 1000000)
+            CLASS_PRETTY=$(echo "<img $CLASS>" | prettier --plugin prettier-plugin-tailwindcss --parser html --bracket-same-line true --print-width 1000000)
 
-            # Remove extra tag and transform back to class: "...".
-            CLASS_FINAL=$(echo $CLASS_PRETTY | grep -oE 'class="[^"|(.)]*"' | sed "s/class=/class: /g")
+            # Remove extra tag.
+            CLASS_FINAL=$(echo $CLASS_PRETTY | grep -oE 'class\s?=\s?"[^"|(.)]*"')
 
             # Replace in files.
             sd -s $CLASS $CLASS_FINAL $FILE

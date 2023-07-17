@@ -1,5 +1,7 @@
 use clap::Parser;
 use error_stack::{FutureExt, IntoReport, Report, ResultExt};
+use leptos::leptos_config::Env;
+use leptos::LeptosOptions;
 use web_server::Error;
 
 use web_server::{logger, settings};
@@ -22,8 +24,20 @@ fn main() -> Result<(), Report<Error>>
     // Tracing logs.
     let ( _maybe_stdio_writer_guard, _maybe_file_writer_guard ) = logger::init( &configs.general.app_name, configs.logger );
 
-    tracing::info!("Starting server for {}.", configs.general.app_name );
-    web_server::init_server( configs.server ).change_context( Error::ServerInitFailed )?;
+    let static_dir = configs.server.static_dir.clone();
+    let static_dir = static_dir.as_ref().to_str().unwrap();
+
+    let leptos_options = LeptosOptions {
+        output_name: configs.general.app_name.clone(),
+        site_root: String::from("."),
+        site_pkg_dir: String::from( static_dir ),
+        env: Env::try_from( configs.general.run_env.to_string() ).unwrap(),
+        site_addr: configs.server.sock_addr_v4.into(),
+        reload_port: 3001,
+    };
+
+    tracing::info!("Starting server for {}.", &configs.general.app_name );
+    web_server::init_server( configs.server, leptos_options ).change_context( Error::ServerInitFailed )?;
 
     Ok(())
 }

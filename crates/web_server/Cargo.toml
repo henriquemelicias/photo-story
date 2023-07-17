@@ -9,17 +9,22 @@ path = "src/bin/main.rs"
 
 [features]
 default = []
-ssr = ["dioxus-ssr", "frontend"]
+ssr = [
+    "frontend",
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+]
 
 [dependencies]
 frontend = { path = "../frontend", optional = true }
 common = { path = "../common" }
 thiserror = "1.0"
 error-stack = { version = "0.3", features = ["spantrace"] }
-dioxus = { git = "https://github.com/DioxusLabs/dioxus" }
-dioxus-router = { git = "https://github.com/DioxusLabs/dioxus" }
-dioxus-web = { git = "https://github.com/DioxusLabs/dioxus" }
-dioxus-ssr = { git = "https://github.com/DioxusLabs/dioxus", optional = true }
+leptos = { version = "0.4", features = ["nightly"] }
+leptos_axum = { version = "0.4" }
+leptos_meta = { version = "0.4", features = ["nightly"] }
+leptos_router = { version = "0.4", features = ["nightly"] }
 gloo = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 wasm-bindgen = "0.2"

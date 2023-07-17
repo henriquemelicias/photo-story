@@ -18,23 +18,17 @@ mod domain;
 mod features;
 mod infrastructure;
 mod utils;
+use wasm_bindgen::prelude::wasm_bindgen;
 
-// #[allow( non_snake_case )]
-// pub fn Layout() -> Html
-// {
-//     html!(
-//         <>
-//             <layout::Header />
-//
-//             <main>
-//                 <Switch<routes::Route> render={routes::switch} /> // must be child of <BrowserRouter>
-//             </main>
-//
-//             <layout::Footer />
-//
-//             <lightbox::modal_view::LightboxModal />
-//         </>
-//     )
-// }
+#[wasm_bindgen]
+pub fn hydrate()
+{
+    use crate::presentation::AppComponent;
+    use leptos::{view, mount_to_body};
+
+    mount_to_body(move |cx| {
+        view! { cx, <AppComponent/> }
+    });
+}
 
 
