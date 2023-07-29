@@ -102,6 +102,7 @@ install-mold-linker:
     rm -rf mold
     git clone https://github.com/rui314/mold.git
     mkdir ./mold/build
+    cd ./mold/; git checkout v2.0.0
     sudo ./mold/install-build-deps.sh
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=c++ ./mold/ -B ./mold/build
     cmake --build ./mold/build/ -j $(nproc)
