@@ -23,15 +23,12 @@
 //!         Box::new( metrics::RESPONSE_TIME_COLLECTOR.clone() )
 //!    ],
 //! );
-//!
 //! ```
-//!
 
 use ::prometheus::{core::Collector, Registry};
 
 /// Metrics that can be used to collect data for prometheus.
-pub mod metrics
-{
+pub mod metrics {
     use lazy_static::lazy_static;
     use prometheus::{HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGauge, Opts};
 
@@ -65,11 +62,8 @@ pub mod metrics
 /// # Panics
 ///
 /// If the metrics can't be added to the registry.
-///
-pub fn add_metrics_to_registry( registry: &Registry, metrics: Vec<Box<dyn Collector>> )
-{
-    for metric in metrics
-    {
+pub fn add_metrics_to_registry( registry: &Registry, metrics: Vec<Box<dyn Collector>> ) {
+    for metric in metrics {
         registry.register( metric ).expect( "metric can't be registered" );
     }
 }

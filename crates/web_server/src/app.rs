@@ -1,25 +1,23 @@
-use axum::{body::Body, extract::State, http::Request, response::IntoResponse, routing::get_service, Router};
-
+use axum::{
+    body::Body, extract::State, handler::Handler, http::Request, response::IntoResponse, routing::get_service, Router,
+};
+#[cfg( feature = "ssr" )]
+use frontend::presentation::AppComponent;
 use hyper::{client::HttpConnector, Uri};
+use leptos::LeptosOptions;
 use settings::validators;
 use tower_http::{
     compression::CompressionLayer,
     cors::CorsLayer,
     services::{ServeDir, ServeFile},
 };
-
-use crate::ssr::file_and_error_handler;
-use axum::{handler::Handler, routing::post};
-#[cfg( feature = "ssr" )]
-use frontend::presentation::AppComponent;
-use leptos::{view, LeptosOptions};
-use leptos_axum::{generate_route_list, LeptosRoutes};
-use tower::Service;
 use url::Url;
 
+#[cfg( feature = "ssr" )]
+use crate::ssr::file_and_error_handler;
+
 #[derive(Debug, Clone)]
-struct ReverseProxyState
-{
+struct ReverseProxyState {
     client:  hyper::client::Client<HttpConnector, Body>,
     api_url: Url,
 }
@@ -33,8 +31,7 @@ pub async fn create(
     assets_dir: validators::DirectoryPath,
     api_url: Url,
     leptos_options: LeptosOptions,
-) -> Option<Router>
-{
+) -> Option<Router> {
     // Main router.
     let mut app = Router::new();
 
@@ -53,7 +50,7 @@ pub async fn create(
     let favicon_file = get_service( ServeFile::new( favicon_path ) );
 
     // Static files directory get service.
-    let serve_static_dir = get_service( ServeDir::new( &static_dir ).precompressed_br() );
+    let serve_static_dir = get_service( ServeDir::new( static_dir ).precompressed_br() );
 
     // Assets files directory get service.
     let serve_assets_dir = get_service( ServeDir::new( &assets_dir ).precompressed_br() );
@@ -100,8 +97,7 @@ pub async fn create(
 async fn api_reverse_proxy_handler(
     State( state ): State<ReverseProxyState>,
     mut req: Request<Body>,
-) -> axum::response::Response
-{
+) -> axum::response::Response {
     let path_query = req
         .uri()
         .path_and_query()

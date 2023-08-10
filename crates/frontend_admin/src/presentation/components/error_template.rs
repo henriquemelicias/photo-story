@@ -3,18 +3,14 @@ use leptos::*;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Error)]
-pub enum AppErrorComponent
-{
+pub enum AppErrorComponent {
     #[error( "Not Found" )]
     NotFound,
 }
 
-impl AppErrorComponent
-{
-    pub fn status_code( &self ) -> StatusCode
-    {
-        match self
-        {
+impl AppErrorComponent {
+    pub fn status_code( &self ) -> StatusCode {
+        match self {
             AppErrorComponent::NotFound => StatusCode::NOT_FOUND,
         }
     }
@@ -27,13 +23,10 @@ pub fn ErrorComponent(
     cx: Scope,
     #[prop( optional )] outside_errors: Option<Errors>,
     #[prop( optional )] errors: Option<RwSignal<Errors>>,
-) -> impl IntoView
-{
-    let errors = match outside_errors
-    {
+) -> impl IntoView {
+    let errors = match outside_errors {
         Some( e ) => create_rw_signal( cx, e ),
-        None => match errors
-        {
+        None => match errors {
             Some( e ) => e,
             None => panic!( "No Errors found and we expected errors!" ),
         },

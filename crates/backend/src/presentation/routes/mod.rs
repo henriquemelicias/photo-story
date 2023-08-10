@@ -1,7 +1,6 @@
 mod photos;
 
-pub mod api
-{
+pub mod api {
     use axum::Router;
 
     use super::photos;

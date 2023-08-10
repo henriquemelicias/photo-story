@@ -3,18 +3,14 @@ use leptos::*;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Error)]
-pub enum AppErrorComponent
-{
-    #[error( "Not Found" )]
+pub enum AppErrorComponent {
+    #[error( "The resource does not exist" )]
     NotFound,
 }
 
-impl AppErrorComponent
-{
-    pub fn status_code( &self ) -> StatusCode
-    {
-        match self
-        {
+impl AppErrorComponent {
+    pub fn status_code( &self ) -> StatusCode {
+        match self {
             AppErrorComponent::NotFound => StatusCode::NOT_FOUND,
         }
     }
@@ -27,14 +23,11 @@ pub fn ErrorComponent(
     cx: Scope,
     #[prop( optional )] outside_errors: Option<Errors>,
     #[prop( optional )] errors: Option<RwSignal<Errors>>,
-) -> impl IntoView
-{
-    let errors = match outside_errors
-    {
-        Some( e ) => create_rw_signal( cx, e ),
-        None => match errors
-        {
-            Some( e ) => e,
+) -> impl IntoView {
+    let errors = match outside_errors {
+        Some( err ) => create_rw_signal( cx, err ),
+        None => match errors {
+            Some( err ) => err,
             None => panic!( "No Errors found and we expected errors!" ),
         },
     };
@@ -46,10 +39,9 @@ pub fn ErrorComponent(
         .into_iter()
         .filter_map( |( _k, v )| v.downcast_ref::<AppErrorComponent>().cloned() )
         .collect();
-    println!( "Errors: {errors:#?}" );
 
     view! {cx,
-        <h1>{if errors.len() > 1 {"Errors"} else {"Error"}}</h1>
+        <h1>{if errors.len() > 1 {"Errors:"} else {"Error:"}}</h1>
         <For
             // a function that returns the items we're iterating over; a signal is fine
             each= move || {errors.clone().into_iter().enumerate()}
@@ -62,7 +54,7 @@ pub fn ErrorComponent(
                 view! {
                     cx,
                     <h2>{error_code.to_string()}</h2>
-                    <p>"Error: " {error_string}</p>
+                    <p>"Message: " {error_string}</p>
                 }
             }
         />

@@ -7,17 +7,17 @@ description = "Library with monitoring utilities such as logger, tracing, metric
 license = "MIT"
 
 [dependencies]
+axum = "0.6"
+lazy_static = "1.4"
+prometheus = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+tower = "0.4"
+tower-http = { version = "0.4", features = ["full"] }
 tracing = "0.1"
-tracing-error = "0.2"
 tracing-appender = "0.2"
+tracing-bunyan-formatter = "0.3"
+tracing-error = "0.2"
 tracing-log = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 tracing-wasm = "0.2"
-tracing-bunyan-formatter = "0.3"
-prometheus = "0.13"
-lazy_static = "1.4"
-axum = "0.6"
-tower = "0.4"
-tower-http = { version = "0.4", features = ["full"] }
 uuid = "1.2"
-serde = { version = "1.0", features = ["derive"] }

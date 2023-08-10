@@ -15,24 +15,35 @@ common = { path = "../common" }
 monitoring = { path = "../monitoring" }
 settings = { path = "../settings" }
 
-chrono = { version = "0.4", features = ["serde"] }
-thiserror = "1.0"
-smartstring = "1.0"
-uuid = { version = "1.2", features = ["serde", "v4"] }
-tracing = "0.1"
-tracing-log = "0.1"
-tokio = { version = "1.24", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "macros", "chrono", "uuid"] }
-figment = { version = "0.10", features = ["toml", "env", "json"] }
 axum = "0.6"
-
+chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.0", features = ["derive"] }
-tower = { version = "0.4", features = ["make"] }
-tower-http = { version = "0.4", features = ["full", "fs", "compression-br", "cors"] }
-validator = { version = "0.16", features = ["derive"] }
+# TODO: when error stack new versions comes out with implicit result to change_context, use error-stack version directly. Do it for the other crates as well.
+error-stack = { git = "https://github.com/hashintel/hash.git", features = ["spantrace"] }
+figment = { version = "0.10", features = ["toml", "env", "json"] }
 futures = { version = "0.3", features = ["std"], default-features = false }
 qstring = "0.7"
-error-stack = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+smartstring = "1.0"
+sqlx = { version = "0.7", features = [
+    "runtime-tokio",
+    "postgres",
+    "macros",
+    "chrono",
+    "uuid",
+] }
+thiserror = "1.0"
+tokio = { version = "1.24", features = ["full"] }
+tower = { version = "0.4", features = ["make"] }
+tower-http = { version = "0.4", features = [
+    "full",
+    "fs",
+    "compression-br",
+    "cors",
+] }
+tracing = "0.1"
+tracing-log = "0.1"
 url = { version = "2.4", features = ["serde"] }
+uuid = { version = "1.2", features = ["serde", "v4"] }
+validator = { version = "0.16", features = ["derive"] }

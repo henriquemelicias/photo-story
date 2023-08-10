@@ -5,8 +5,7 @@ use leptos_router::{Route, Routes};
 
 #[must_use]
 #[component]
-pub fn ComponentRouter( cx: Scope ) -> impl IntoView
-{
+pub fn ComponentRouter( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -18,8 +17,7 @@ pub fn ComponentRouter( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn Home( cx: Scope ) -> impl IntoView
-{
+fn Home( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -35,7 +33,6 @@ fn Home( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn NotFound( cx: Scope ) -> impl IntoView
-{
+fn NotFound( cx: Scope ) -> impl IntoView {
     view! { cx, <h1>"404"</h1> }
 }

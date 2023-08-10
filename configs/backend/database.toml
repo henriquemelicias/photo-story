@@ -1,0 +1,5 @@
+[default]
+url = "postgres://postgres:postgres@localhost:5432/photo_story"
+pool_size = 10
+max_lifetime_minutes = 30
+do_migration = false

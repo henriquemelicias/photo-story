@@ -4,22 +4,19 @@
 use tauri::{Manager, Window};
 
 #[derive(Clone, serde::Serialize)]
-struct GreetEvent
-{
+struct GreetEvent {
     greeting: String,
 }
 
 #[derive(Clone, serde::Serialize)]
-struct GenericEvent
-{
+struct GenericEvent {
     num:     u16,
     message: String,
 }
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
-fn greet( window: Window, name: &str ) -> String
-{
+fn greet( window: Window, name: &str ) -> String {
     // Events should be emitted from `Window` object only.
     // `tauri-sys` expects window name to be part of event payload.
     window
@@ -35,8 +32,7 @@ fn greet( window: Window, name: &str ) -> String
 }
 
 #[tauri::command]
-fn emit_event( window: Window, num: u16 )
-{
+fn emit_event( window: Window, num: u16 ) {
     window
         .emit_all(
             "generic-event",
@@ -48,8 +44,7 @@ fn emit_event( window: Window, num: u16 )
         .unwrap();
 }
 
-fn main()
-{
+fn main() {
     tauri::Builder::default()
         .run( tauri::generate_context!() )
         .expect( "error while running tauri application" );

@@ -2,8 +2,7 @@ use leptos::{component, view, IntoView, Scope};
 
 #[must_use]
 #[component]
-pub fn ComponentHeader( cx: Scope ) -> impl IntoView
-{
+pub fn ComponentHeader( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -14,8 +13,7 @@ pub fn ComponentHeader( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn Navbar( cx: Scope ) -> impl IntoView
-{
+fn Navbar( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -29,8 +27,7 @@ fn Navbar( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn NavbarStart( cx: Scope ) -> impl IntoView
-{
+fn NavbarStart( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -44,8 +41,7 @@ fn NavbarStart( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn NavbarDropdownMenu( cx: Scope ) -> impl IntoView
-{
+fn NavbarDropdownMenu( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -84,8 +80,7 @@ fn NavbarDropdownMenu( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn SvgNavbarDropdownMenu( cx: Scope ) -> impl IntoView
-{
+fn SvgNavbarDropdownMenu( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -96,8 +91,7 @@ fn SvgNavbarDropdownMenu( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn SvgNavbarMenuEntry( cx: Scope ) -> impl IntoView
-{
+fn SvgNavbarMenuEntry( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -108,8 +102,7 @@ fn SvgNavbarMenuEntry( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn NavbarCenter( cx: Scope ) -> impl IntoView
-{
+fn NavbarCenter( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -120,8 +113,7 @@ fn NavbarCenter( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn NavbarHorizontalMenu( cx: Scope ) -> impl IntoView
-{
+fn NavbarHorizontalMenu( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 
@@ -148,8 +140,7 @@ fn NavbarHorizontalMenu( cx: Scope ) -> impl IntoView
 }
 
 #[component]
-fn NavbarEnd( cx: Scope ) -> impl IntoView
-{
+fn NavbarEnd( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 

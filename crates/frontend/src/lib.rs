@@ -21,10 +21,10 @@ mod utils;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
-pub fn hydrate()
-{
-    use crate::presentation::AppComponent;
+pub fn hydrate() {
     use leptos::{mount_to_body, view};
+
+    use crate::presentation::AppComponent;
 
     mount_to_body( move |cx| {
         view! { cx, <AppComponent/> }

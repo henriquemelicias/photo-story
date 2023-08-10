@@ -1,14 +1,11 @@
 //! The main entry point of the backend server.
 //!
 //! This file is the main entry point of the backend server. It is responsible for parsing the command line arguments, initializing the global settings variables, initializing the logger, and starting the server.
-//!
-use clap::Parser;
-use error_stack::{FutureExt, IntoReport, Report, ResultExt};
-
 use backend::{logger, settings, Error};
+use clap::Parser;
+use error_stack::{Report, ResultExt};
 
-fn main() -> Result<(), Report<Error>>
-{
+fn main() -> Result<(), Report<Error>> {
     // Parse the command line arguments.
     let cli_args = settings::CliArgs::parse();
 
@@ -25,10 +22,9 @@ fn main() -> Result<(), Report<Error>>
         &[&env_prefix, "_CONFIGS_DIR"].concat(),
         &cli_args.configs_dir,
     )
-    .into_report()
     .change_context( Error::InvalidConfigsDir )?;
 
-    // Initialize global settings variables.
+    // Initialize the settings variables.
     let configs =
         settings::init( configs_dir.as_path(), &env_prefix, &cli_args ).change_context( Error::SettingsInitFailed )?;
 
@@ -37,7 +33,7 @@ fn main() -> Result<(), Report<Error>>
         logger::init( &configs.general.app_name, configs.logger );
 
     tracing::info!( "Starting {}", configs.general.app_name );
-    backend::init_server( configs.server ).change_context( Error::ServerInitFailed )?;
+    backend::init_server( configs.server, configs.database ).change_context( Error::ServerInitFailed )?;
 
     Ok( () )
 }

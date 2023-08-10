@@ -1,10 +1,8 @@
 //! The settings module.
 //!
 //! This module is responsible for importing the settings from the configuration files, the environment variables and the command line arguments. The latter overwrites the former.
-//!
 #![allow( unused )]
 
-use axum::http;
 use std::{
     env,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
@@ -14,23 +12,23 @@ use std::{
     sync::{Arc, Mutex, OnceLock},
 };
 
+use axum::http;
 use clap::Parser;
-use error_stack::{FutureExt, IntoReport, Report, ResultExt};
+use error_stack::{FutureExt, Report, ResultExt};
 use futures::TryFutureExt;
 use hyper::Uri;
 use serde::{Deserialize, Serialize};
-
-use crate::logger;
 pub use settings::get_configs_dir_path;
 use settings::{validators, FigmentExtractor, RuntimeEnvironment};
 use thiserror::Error;
 use url::Url;
 
+use crate::logger;
+
 /// Command line arguments interface.
 #[derive(Parser, Debug, Serialize, Deserialize)]
 #[clap()]
-pub struct CliArgs
-{
+pub struct CliArgs {
     /// Set runtime environment.
     #[clap(short = 'e', long = "run-env", value_parser = ["development", "production"])]
     #[serde( skip_serializing_if = "Option::is_none" )]
@@ -99,32 +97,18 @@ pub struct InitImportConfigError( &'static str );
 /// # Errors
 ///
 /// If the settings import fails, then the function returns an error.
-///
 pub fn init(
     configs_dir: &Path,
     env_prefix: &str,
     cli_args: &CliArgs,
-) -> Result<AllConfigs, Report<InitImportConfigError>>
-{
-    /* General settings */
-    let general_path = configs_dir.join( "general.toml" );
-    let general_path = if general_path.exists()
-    {
-        general_path.to_str()
-    }
-    else
-    {
-        None
-    };
-
-    let mut general_configs = GeneralConfigs::extract(
-        None,
-        general_path,
-        Some( &[env_prefix, "_GENERAL_"].concat() ),
-        Some( cli_args ),
-    )
-    .into_report()
-    .change_context( InitImportConfigError( "GENERAL" ) )?;
+) -> Result<AllConfigs, Report<InitImportConfigError>> {
+    // General settings
+    let mut general_configs = GeneralConfigs::extract()
+        .file( configs_dir.join( "general.toml" ) )
+        .env_prefix( &[env_prefix, "_GENERAL_"].concat() )
+        .cli( cli_args )
+        .call()
+        .change_context( InitImportConfigError( "GENERAL" ) )?;
 
     // Get runtime environment from general settings.
     let runtime_env: RuntimeEnvironment = env::var( [env_prefix, "_GENERAL_RUN_ENV"].concat() ).map_or_else(
@@ -132,45 +116,23 @@ pub fn init(
         |env| RuntimeEnvironment::from( &*env ),
     );
 
-    /* Server settings */
-    let server_path = configs_dir.join( "server.toml" );
-    let server_path = if server_path.exists()
-    {
-        server_path.to_str()
-    }
-    else
-    {
-        None
-    };
+    // Server settings.
+    let server_configs = ServerConfigs::extract()
+        .env( &runtime_env )
+        .env_prefix( &[env_prefix, "_SERVER_"].concat() )
+        .file( configs_dir.join( "server.toml" ) )
+        .cli( cli_args )
+        .call()
+        .change_context( InitImportConfigError( "SERVER" ) )?;
 
-    let server_configs = ServerConfigs::extract(
-        Some( &runtime_env ),
-        server_path,
-        Some( &[env_prefix, "_SERVER_"].concat() ),
-        Some( cli_args ),
-    )
-    .into_report()
-    .change_context( InitImportConfigError( "SERVER" ) )?;
-
-    /* Logger settings */
-    let logger_path = configs_dir.join( "logger.toml" );
-    let logger_path = if logger_path.exists()
-    {
-        logger_path.to_str()
-    }
-    else
-    {
-        None
-    };
-
-    let mut logger_configs = LoggerConfigs::extract(
-        Some( &runtime_env ),
-        logger_path,
-        Some( &[env_prefix, "_LOGGER_"].concat() ),
-        Some( cli_args ),
-    )
-    .into_report()
-    .change_context( InitImportConfigError( "LOGGER" ) )?;
+    // Logger settings.
+    let logger_configs = LoggerConfigs::extract()
+        .env( &runtime_env )
+        .env_prefix( &[env_prefix, "_LOGGER_"].concat() )
+        .file( configs_dir.join( "logger.toml" ) )
+        .cli( cli_args )
+        .call()
+        .change_context( InitImportConfigError( "SERVER" ) )?;
 
     Ok( AllConfigs {
         general: general_configs,
@@ -180,24 +142,20 @@ pub fn init(
 }
 
 /// All the settings imported.
-pub struct AllConfigs
-{
+pub struct AllConfigs {
     pub general: GeneralConfigs,
     pub server:  ServerConfigs,
     pub logger:  LoggerConfigs,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct GeneralConfigs
-{
+pub struct GeneralConfigs {
     pub app_name: String,
     pub run_env:  RuntimeEnvironment,
 }
 
-impl Default for GeneralConfigs
-{
-    fn default() -> Self
-    {
+impl Default for GeneralConfigs {
+    fn default() -> Self {
         Self {
             app_name: "frontend".to_string(),
             run_env:  RuntimeEnvironment::Development,
@@ -205,21 +163,18 @@ impl Default for GeneralConfigs
     }
 }
 
-impl FigmentExtractor<Self> for GeneralConfigs {}
+impl FigmentExtractor<'_, Self> for GeneralConfigs {}
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ServerConfigs
-{
+pub struct ServerConfigs {
     pub sock_addr_v4: SocketAddrV4,
     pub proxy_url:    Url,
     pub static_dir:   validators::DirectoryPath,
     pub assets_dir:   validators::DirectoryPath,
 }
 
-impl Default for ServerConfigs
-{
-    fn default() -> Self
-    {
+impl Default for ServerConfigs {
+    fn default() -> Self {
         Self {
             sock_addr_v4: SocketAddrV4::new( Ipv4Addr::new( 127, 0, 0, 1 ), 5556 ),
             proxy_url:    Url::parse( "http://127.0.0.1:5555" ).unwrap(),
@@ -241,20 +196,17 @@ impl Default for ServerConfigs
     }
 }
 
-impl FigmentExtractor<Self> for ServerConfigs {}
+impl FigmentExtractor<'_, Self> for ServerConfigs {}
 
 #[derive(Serialize, Deserialize)]
-pub struct LoggerConfigs
-{
+pub struct LoggerConfigs {
     pub log_level:         logger::Level,
     pub is_stdout_emitted: bool,
     pub files_emitted:     LoggerFilesEmittedSubconfig,
 }
 
-impl Default for LoggerConfigs
-{
-    fn default() -> Self
-    {
+impl Default for LoggerConfigs {
+    fn default() -> Self {
         Self {
             log_level:         logger::Level::from_str( "debug" ).unwrap(),
             is_stdout_emitted: true,
@@ -263,26 +215,27 @@ impl Default for LoggerConfigs
     }
 }
 
-impl FigmentExtractor<Self> for LoggerConfigs {}
+impl FigmentExtractor<'_, Self> for LoggerConfigs {}
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct LoggerFilesEmittedSubconfig
-{
+pub struct LoggerFilesEmittedSubconfig {
     pub is_emitted:   bool,
     pub dir:          validators::DirectoryPath,
     pub files_prefix: String,
 }
 
-impl Default for LoggerFilesEmittedSubconfig
-{
-    fn default() -> Self
-    {
+impl Default for LoggerFilesEmittedSubconfig {
+    fn default() -> Self {
         Self {
-            is_emitted: true,
-            dir: PathBuf::from("./logs").try_into().unwrap_or_else( |err| {
-                panic!( "Default settings used for logger but emitting to files is enabled and the failed to convert logs directory: {}", err )
+            is_emitted:   true,
+            dir:          PathBuf::from( "./logs" ).try_into().unwrap_or_else( |err| {
+                panic!(
+                    "Default settings used for logger but emitting to files is enabled and the failed to convert logs \
+                     directory: {}",
+                    err
+                )
             } ),
-            files_prefix: "frontend.dev".to_string()
+            files_prefix: "frontend.dev".to_string(),
         }
     }
 }

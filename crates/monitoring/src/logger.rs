@@ -41,25 +41,20 @@ pub struct Level( tracing::Level );
 #[derive(Debug)]
 pub struct LevelParseError( String );
 
-impl Display for LevelParseError
-{
-    fn fmt( &self, f: &mut std::fmt::Formatter<'_> ) -> std::fmt::Result
-    {
+impl Display for LevelParseError {
+    fn fmt( &self, f: &mut std::fmt::Formatter<'_> ) -> std::fmt::Result {
         write!( f, "Failed to parse level: {}", self.0 )
     }
 }
 
 impl Error for LevelParseError {}
 
-impl FromStr for Level
-{
+impl FromStr for Level {
     type Err = LevelParseError;
 
-    fn from_str( s: &str ) -> Result<Self, Self::Err>
-    {
+    fn from_str( s: &str ) -> Result<Self, Self::Err> {
         let level = s.to_uppercase();
-        match level.as_str()
-        {
+        match level.as_str() {
             "TRACE" => Ok( Self( tracing::Level::TRACE ) ),
             "DEBUG" => Ok( Self( tracing::Level::DEBUG ) ),
             "INFO" => Ok( Self( tracing::Level::INFO ) ),
@@ -70,8 +65,7 @@ impl FromStr for Level
     }
 }
 
-impl Serialize for Level
-{
+impl Serialize for Level {
     fn serialize<S>( &self, serializer: S ) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -80,8 +74,7 @@ impl Serialize for Level
     }
 }
 
-impl<'de> Deserialize<'de> for Level
-{
+impl<'de> Deserialize<'de> for Level {
     fn deserialize<D>( deserializer: D ) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -93,11 +86,9 @@ impl<'de> Deserialize<'de> for Level
 
 /// Layers that can be enabled for the tracing.
 #[derive(Debug)]
-pub enum EnableLayer<'a>
-{
+pub enum EnableLayer<'a> {
     /// Output to a file.
-    File
-    {
+    File {
         /// The name of the application.
         app_name:  &'a str,
         /// The directory to create the log files.
@@ -129,9 +120,7 @@ pub enum EnableLayer<'a>
 /// # Examples
 ///
 /// see [`crate::logger`] for an example.
-///
-pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Option<WorkerGuard>, Option<WorkerGuard> )
-{
+pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Option<WorkerGuard>, Option<WorkerGuard> ) {
     // Use tracing::level
     let level_filter = level_filter.0;
 
@@ -142,13 +131,10 @@ pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Opti
     let mut guard_file_writer = None;
 
     // Check output_types_enabled.
-    for output_type in layers_enabled
-    {
-        match output_type
-        {
+    for output_type in layers_enabled {
+        match output_type {
             // Write logs to stdout.
-            EnableLayer::Stdout =>
-            {
+            EnableLayer::Stdout => {
                 let ( non_blocking_io_writer, guard ) = tracing_appender::non_blocking( std::io::stdout() );
                 let stdout_layer = tracing_subscriber::fmt::layer().with_writer( non_blocking_io_writer );
 
@@ -160,8 +146,7 @@ pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Opti
                 app_name,
                 directory,
                 prefix,
-            } =>
-            {
+            } => {
                 let file_appender = tracing_appender::rolling::hourly( *directory, prefix );
                 let ( non_blocking_file_writer, guard ) = tracing_appender::non_blocking( file_appender );
 
@@ -172,14 +157,12 @@ pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Opti
                 layers.push( file_layer.boxed() );
             }
             // Write logs to wasm console.
-            EnableLayer::Wasm =>
-            {
+            EnableLayer::Wasm => {
                 layers.push( tracing_wasm::WASMLayer::default().boxed() );
             }
 
             // Capture SpanTraces.
-            EnableLayer::SpanTraces =>
-            {
+            EnableLayer::SpanTraces => {
                 layers.push( tracing_error::ErrorLayer::default().boxed() );
             }
         }
@@ -195,7 +178,10 @@ pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Opti
         .with( log_level_filter )
         .init();
 
-    tracing::info!( "Initialized logging with instrumentation. Settings used: level_filter={level_filter}, layers={layers_enabled:?}." );
+    tracing::info!(
+        "Initialized logging with instrumentation. Settings used: level_filter={level_filter}, \
+         layers={layers_enabled:?}."
+    );
 
     ( guard_io_writer, guard_file_writer )
 }
@@ -209,7 +195,6 @@ pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Opti
 /// # Returns
 ///
 /// The router with the instrumentation added.
-///
 pub fn middleware_http_tracing<T>( router: Router<T> ) -> Router<T>
 where
     T: Clone + Send + Sync + 'static,

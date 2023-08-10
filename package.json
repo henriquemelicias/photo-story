@@ -4,6 +4,7 @@
     "critical": "^5.1.1",
     "csso-cli": "^4.0.2",
     "daisyui": "^3.2.1",
+    "eslint": "^8.46.0",
     "postcss": "^8.4.25",
     "postcss-cli": "^10.1.0",
     "postcss-extract-media-query": "^3.0.0",

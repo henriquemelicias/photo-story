@@ -2,14 +2,12 @@ use leptos::{component, view, IntoView, Scope};
 
 #[must_use]
 #[component]
-pub fn ComponentFooter( cx: Scope ) -> impl IntoView
-{
+pub fn ComponentFooter( cx: Scope ) -> impl IntoView {
     view! { cx, <FooterTop/> }
 }
 
 #[component]
-fn FooterTop( cx: Scope ) -> impl IntoView
-{
+fn FooterTop( cx: Scope ) -> impl IntoView {
     view! {
         cx,
 

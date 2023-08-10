@@ -1,12 +1,9 @@
 use clap::Parser;
 use error_stack::{FutureExt, IntoReport, Report, ResultExt};
 use leptos::{leptos_config::Env, LeptosOptions};
-use web_server::Error;
+use web_server::{logger, settings, Error};
 
-use web_server::{logger, settings};
-
-fn main() -> Result<(), Report<Error>>
-{
+fn main() -> Result<(), Report<Error>> {
     // Parse the command line arguments.
     let cli_args = settings::CliArgs::parse();
 
@@ -23,7 +20,6 @@ fn main() -> Result<(), Report<Error>>
         &[&env_prefix, "_CONFIGS_DIR"].concat(),
         &cli_args.configs_dir,
     )
-    .into_report()
     .change_context( Error::InvalidConfigsDir )?;
 
     // Initialize settings variables.

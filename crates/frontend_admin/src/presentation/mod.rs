@@ -8,12 +8,12 @@ pub mod components;
 pub mod layout;
 pub mod routes;
 
-use crate::presentation::layout::{ComponentFooter, ComponentHeader};
 use routes::ComponentRouter;
 
+use crate::presentation::layout::{ComponentFooter, ComponentHeader};
+
 #[component]
-pub fn AppComponent( cx: Scope ) -> impl IntoView
-{
+pub fn AppComponent( cx: Scope ) -> impl IntoView {
     view! {
         cx,
         // content for this welcome page

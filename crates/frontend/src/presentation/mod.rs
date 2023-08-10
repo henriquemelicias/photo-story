@@ -9,16 +9,16 @@ pub mod components;
 pub mod layout;
 pub mod routes;
 
+use components::error_template::AppErrorComponent;
+use routes::ComponentRouter;
+
 use crate::presentation::{
     components::error_template::ErrorComponent,
     layout::{ComponentFooter, ComponentHeader},
 };
-use components::error_template::AppErrorComponent;
-use routes::ComponentRouter;
 
 #[component]
-pub fn AppComponent( cx: Scope ) -> impl IntoView
-{
+pub fn AppComponent( cx: Scope ) -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context( cx );
 
@@ -62,8 +62,7 @@ pub fn AppComponent( cx: Scope ) -> impl IntoView
 // }
 
 #[component]
-fn TailwindStyle( cx: Scope ) -> impl IntoView
-{
+fn TailwindStyle( cx: Scope ) -> impl IntoView {
     let style = include_str!( "../../styles/dist/tailwind.css" );
     view! { cx,
         <Style>
@@ -74,8 +73,7 @@ fn TailwindStyle( cx: Scope ) -> impl IntoView
 
 /// Renders the home page of your application.
 #[component]
-fn HomePage( cx: Scope ) -> impl IntoView
-{
+fn HomePage( cx: Scope ) -> impl IntoView {
     // Creates a reactive value to update the button
     let ( count, set_count ) = create_signal( cx, 0 );
     let on_click = move |_| set_count.update( |count| *count += 1 );
