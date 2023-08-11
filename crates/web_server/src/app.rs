@@ -1,6 +1,4 @@
-use axum::{
-    body::Body, extract::State, handler::Handler, http::Request, response::IntoResponse, routing::get_service, Router,
-};
+use axum::{body::Body, extract::State, http::Request, response::IntoResponse, routing::get_service, Router};
 #[cfg( feature = "ssr" )]
 use frontend::presentation::AppComponent;
 use hyper::{client::HttpConnector, Uri};

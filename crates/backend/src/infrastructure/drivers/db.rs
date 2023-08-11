@@ -1,5 +1,6 @@
-use sqlx::{Executor, Postgres};
 use std::time::Duration;
+
+use sqlx::{Executor, Postgres};
 use thiserror::Error;
 
 pub type Pool = sqlx::Pool<Postgres>;
@@ -15,7 +16,11 @@ pub type Tx = sqlx::Transaction<'static, Postgres>;
 #[error( "Sqlx pool connection failed due to: {0}." )]
 pub struct ConnectionError( #[from] sqlx::Error );
 
-pub async fn connect( connection: &str, max_connections: u32, max_lifetime_minutes: u32 ) -> Result<Pool, ConnectionError> {
+pub async fn connect(
+    connection: &str,
+    max_connections: u32,
+    max_lifetime_minutes: u32,
+) -> Result<Pool, ConnectionError> {
     let pool = PoolOptions::new()
         .max_connections( max_connections )
         .max_lifetime( Duration::from_secs( u64::from( max_lifetime_minutes ) * 60 ) )

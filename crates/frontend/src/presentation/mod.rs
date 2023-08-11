@@ -2,7 +2,7 @@
 #![allow( clippy::module_name_repetitions )]
 
 use leptos::{component, create_signal, view, Errors, IntoView, Scope, SignalUpdate};
-use leptos_meta::{provide_meta_context, Html, Meta, Style, Stylesheet, Title};
+use leptos_meta::{provide_meta_context, Html, Meta, Style, Title};
 use leptos_router::Router;
 
 pub mod components;

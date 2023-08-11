@@ -7,9 +7,8 @@
 
 use std::net::SocketAddr;
 
-use axum::ServiceExt;
 pub use error::Error;
-use error_stack::{report, IntoReport, Report, ResultExt};
+use error_stack::{Report, ResultExt};
 use leptos::LeptosOptions;
 use thiserror::Error;
 use tracing::instrument;
@@ -25,12 +24,12 @@ mod ssr;
 
 #[derive(Error, Debug)]
 pub enum InitServerError {
-    /// Failed to create the app.
-    #[error( "Failed to create the app router." )]
-    AppRouterCreationFailed,
     /// Failed to bind on the provided address.
     #[error( "Failed to bind on the address: {0}" )]
     AddressBindFailed( SocketAddr ),
+    /// Failed to create the app.
+    #[error( "Failed to create the app router." )]
+    AppRouterCreationFailed,
     /// Failed to serve the server.
     #[error( "Failed to serve the server." )]
     ServerServeFailed,

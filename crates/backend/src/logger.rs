@@ -21,9 +21,10 @@ use crate::settings;
 /// # Errors
 ///
 /// If the logger initialization fails, then the function returns an error.
+#[must_use]
 pub fn init(
     app_name: &str,
-    logger_settings: settings::LoggerConfigs,
+    logger_settings: &settings::LoggerConfigs,
 ) -> ( Option<logger::WorkerGuard>, Option<logger::WorkerGuard> ) {
     let mut tracing_layers = Vec::new();
 
@@ -32,7 +33,12 @@ pub fn init(
         tracing_layers.push( logger::EnableLayer::Stdout );
     }
 
-    let files_emitted_config = logger_settings.files_emitted;
+    // Enable tokio-console logs.
+    if logger_settings.is_tokio_console_emitted {
+        tracing_layers.push( logger::EnableLayer::TokioConsole );
+    }
+
+    let files_emitted_config = &logger_settings.files_emitted;
 
     // Emit logs to file if the setting is enabled.
     if files_emitted_config.is_emitted {

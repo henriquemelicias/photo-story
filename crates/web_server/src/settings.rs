@@ -13,7 +13,7 @@ use std::{
 };
 
 use axum::http;
-use clap::Parser;
+use clap::{Args, Parser};
 use error_stack::{FutureExt, Report, ResultExt};
 use futures::TryFutureExt;
 use hyper::Uri;
@@ -27,56 +27,73 @@ use crate::logger;
 
 /// Command line arguments interface.
 #[derive(Parser, Debug, Serialize, Deserialize)]
-#[clap()]
 pub struct CliArgs {
-    /// Set runtime environment.
-    #[clap(short = 'e', long = "run-env", value_parser = ["development", "production"])]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    run_env: Option<String>,
-
-    /// Set the listen addr.
-    #[clap( short = 'a', long = "addr", value_parser )]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    addr: Option<Ipv4Addr>,
-
-    /// Set the listen port.
-    #[clap(short = 'p', long = "port", value_parser = clap::value_parser ! (u16).range(1024..65334))]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    port: Option<u16>,
-
-    /// Set the proxy url for calls to the backend.
-    /// Example: http://localhost:5555
-    #[clap( long = "proxy-url", value_parser )]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    proxy_url: Option<String>,
-
-    /// Set the log level.
-    #[clap(short = 'l', long = "log-level", value_parser = ["trace", "debug", "info", "warn", "error"])]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    log_level: Option<String>,
-
-    /// Set the static files directory.
-    #[clap( short = 's', long = "static-dir", value_parser )]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    static_dir: Option<PathBuf>,
-
-    /// Set the assets files directory.
-    #[clap( long = "assets-dir", value_parser )]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    assets_dir: Option<PathBuf>,
-
     /// Configs directory.
     /// The directory where the configuration files are located. There is also the env variable FRONTEND_CONFIGS_DIR.
     /// Default: ./configs/frontend/
-    #[clap( long = "configs-dir", value_parser )]
+    #[arg( long = "configs-dir", value_parser )]
     #[serde( skip_serializing_if = "Option::is_none" )]
     pub configs_dir: Option<PathBuf>,
 
     /// Env prefix.
     /// The prefix for the environment variables to import settings.
-    #[clap( long = "env-prefix", value_parser, default_value = "FRONTEND" )]
+    #[arg( long = "env-prefix", value_parser, default_value = "FRONTEND" )]
     #[serde( skip_serializing_if = "Option::is_none" )]
     pub env_prefix: Option<String>,
+
+    #[command( flatten )]
+    pub general: CliArgsGeneral,
+
+    #[command( flatten )]
+    pub server: CliArgsServer,
+
+    #[command( flatten )]
+    pub logger: CliArgsLogger,
+}
+
+#[derive(Args, Debug, Serialize, Deserialize)]
+pub struct CliArgsGeneral {
+    /// Set runtime environment.
+    #[arg(short = 'e', long = "run-env", value_parser = ["development", "production"])]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    run_env: Option<String>,
+}
+
+#[derive(Args, Debug, Serialize, Deserialize)]
+pub struct CliArgsServer {
+    /// Set the listen addr.
+    #[arg( short = 'a', long = "addr", value_parser )]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    addr: Option<Ipv4Addr>,
+
+    /// Set the listen port.
+    #[arg( short = 'p', long = "port", value_parser = clap::value_parser! (u16).range(1024..) )]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    port: Option<u16>,
+
+    /// Set the proxy url for calls to the backend.
+    /// Example: http://localhost:5555
+    #[arg( long = "proxy-url", value_parser )]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    proxy_url: Option<String>,
+
+    /// Set the static files directory.
+    #[arg( short = 's', long = "static-dir", value_parser )]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    static_dir: Option<PathBuf>,
+
+    /// Set the assets files directory.
+    #[arg( long = "assets-dir", value_parser )]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    assets_dir: Option<PathBuf>,
+}
+
+#[derive(Args, Debug, Serialize, Deserialize)]
+pub struct CliArgsLogger {
+    /// Set the log level.
+    #[arg( short = 'l', long = "log-level", value_parser = ["trace", "debug", "info", "warn", "error"])]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    log_level: Option<String>,
 }
 
 /// Error type for the [`init`] function.
@@ -106,7 +123,7 @@ pub fn init(
     let mut general_configs = GeneralConfigs::extract()
         .file( configs_dir.join( "general.toml" ) )
         .env_prefix( &[env_prefix, "_GENERAL_"].concat() )
-        .cli( cli_args )
+        .cli( &cli_args.general )
         .call()
         .change_context( InitImportConfigError( "GENERAL" ) )?;
 
@@ -121,7 +138,7 @@ pub fn init(
         .env( &runtime_env )
         .env_prefix( &[env_prefix, "_SERVER_"].concat() )
         .file( configs_dir.join( "server.toml" ) )
-        .cli( cli_args )
+        .cli( &cli_args.server )
         .call()
         .change_context( InitImportConfigError( "SERVER" ) )?;
 
@@ -130,7 +147,7 @@ pub fn init(
         .env( &runtime_env )
         .env_prefix( &[env_prefix, "_LOGGER_"].concat() )
         .file( configs_dir.join( "logger.toml" ) )
-        .cli( cli_args )
+        .cli( &cli_args.logger )
         .call()
         .change_context( InitImportConfigError( "SERVER" ) )?;
 

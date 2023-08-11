@@ -26,11 +26,13 @@ use axum::{
     http::{HeaderMap, Request, Response},
     Router,
 };
+use lazy_static::__Deref;
 use serde::{Deserialize, Serialize};
 use tower_http::{classify::ServerErrorsFailureClass, trace as http_trace};
 use tracing::Span;
 pub use tracing_appender::non_blocking::WorkerGuard;
 use tracing_bunyan_formatter::BunyanFormattingLayer;
+use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
 use uuid::Uuid;
 
@@ -100,7 +102,11 @@ pub enum EnableLayer<'a> {
     Stdout,
     /// Output to wasm ( console.log ).
     Wasm,
-    /// Enable capture `SpanTraces` .
+    /// Tokio-console.
+    TokioConsole,
+    /// Jaeger with open telemetry. The associated value is the tracer created from opentelemetry_jaeger.
+    Jaeger( opentelemetry::sdk::trace::Tracer ),
+    /// Enable capture `SpanTraces`.
     SpanTraces,
 }
 
@@ -120,6 +126,7 @@ pub enum EnableLayer<'a> {
 /// # Examples
 ///
 /// see [`crate::logger`] for an example.
+// TODO: REFORMAT logger monitoring.
 pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Option<WorkerGuard>, Option<WorkerGuard> ) {
     // Use tracing::level
     let level_filter = level_filter.0;
@@ -147,7 +154,7 @@ pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Opti
                 directory,
                 prefix,
             } => {
-                let file_appender = tracing_appender::rolling::hourly( *directory, prefix );
+                let file_appender = tracing_appender::rolling::hourly( directory, prefix );
                 let ( non_blocking_file_writer, guard ) = tracing_appender::non_blocking( file_appender );
 
                 // TODO: Change into tracing_subscriber::fmt::format::Json when stable.
@@ -160,10 +167,22 @@ pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Opti
             EnableLayer::Wasm => {
                 layers.push( tracing_wasm::WASMLayer::default().boxed() );
             }
-
             // Capture SpanTraces.
             EnableLayer::SpanTraces => {
                 layers.push( tracing_error::ErrorLayer::default().boxed() );
+            }
+            // Write to tokio console.
+            EnableLayer::TokioConsole => {
+                #[cfg( tokio_unstable )]
+                layers.push( console_subscriber::spawn().boxed() );
+
+                #[cfg( not( tokio_unstable ) )]
+                eprintln!( "Tokio-console tracing impossible to enable due to missing RUSTFLAGS='--cfg tokio_unstable'. Please rebuild." );
+            }
+            // Send traces to Jaeger. The associated value is moved.
+            EnableLayer::Jaeger( tracer ) => {
+                        let opentelemetry_layer = tracing_opentelemetry::layer().with_tracer( tracer.clone() );
+                        layers.push( opentelemetry_layer.boxed() );
             }
         }
     }

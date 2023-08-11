@@ -23,11 +23,42 @@ use url::Url;
 /// The command line arguments.
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct CliArgs {
+    /// Configs directory.
+    /// The directory where the configuration files are located. There is also the env variable BACKEND_CONFIGS_DIR.
+    /// Default: ./configs/backend/
+    #[arg( long = "configs-dir", value_parser )]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    pub configs_dir: Option<PathBuf>,
+
+    /// Env prefix.
+    /// The prefix for the environment variables to import settings. Is always uppercase.
+    #[arg( long = "env-prefix", value_parser, default_value = "BACKEND" )]
+    #[serde( skip_serializing_if = "Option::is_none" )]
+    pub env_prefix: Option<String>,
+
+    #[command( flatten )]
+    pub general: CliArgsGeneral,
+
+    #[command( flatten )]
+    pub server: CliArgsServer,
+
+    #[command( flatten )]
+    pub logger: CliArgsLogger,
+
+    #[command( flatten )]
+    pub database: CliArgsDatabase,
+}
+
+#[derive(Args, Debug, Serialize, Deserialize)]
+pub struct CliArgsGeneral {
     /// Set runtime environment.
     #[arg(short = 'e', long = "run-env", value_parser = ["development", "production"])]
     #[serde( skip_serializing_if = "Option::is_none" )]
     run_env: Option<String>,
+}
 
+#[derive(Args, Debug, Serialize, Deserialize)]
+pub struct CliArgsServer {
     /// Set the listen addr.
     #[arg( short = 'a', long = "addr", value_parser )]
     #[serde( skip_serializing_if = "Option::is_none" )]
@@ -47,27 +78,14 @@ pub struct CliArgs {
     #[arg( long = "frontend-port", value_parser = clap::value_parser! (u16).range(1024..))]
     #[serde( skip_serializing_if = "Option::is_none" )]
     frontend_port: Option<u16>,
+}
 
+#[derive(Args, Debug, Serialize, Deserialize)]
+pub struct CliArgsLogger {
     /// Set the log level.
     #[arg( short = 'l', long = "log-level", value_parser = ["trace", "debug", "info", "warn", "error"])]
     #[serde( skip_serializing_if = "Option::is_none" )]
     log_level: Option<String>,
-
-    /// Configs directory.
-    /// The directory where the configuration files are located. There is also the env variable BACKEND_CONFIGS_DIR.
-    /// Default: ./configs/backend/
-    #[arg( long = "configs-dir", value_parser )]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    pub configs_dir: Option<PathBuf>,
-
-    /// Env prefix.
-    /// The prefix for the environment variables to import settings. Is always uppercase.
-    #[arg( long = "env-prefix", value_parser, default_value = "BACKEND" )]
-    #[serde( skip_serializing_if = "Option::is_none" )]
-    pub env_prefix: Option<String>,
-
-    #[command( flatten )]
-    pub database: CliArgsDatabase,
 }
 
 #[derive(Args, Debug, Serialize, Deserialize)]
@@ -119,7 +137,7 @@ pub fn init(
     let mut general_configs = GeneralConfigs::extract()
         .file( configs_dir.join( "general.toml" ) )
         .env_prefix( &[env_prefix, "_GENERAL_"].concat() )
-        .cli( cli_args )
+        .cli( &cli_args.general )
         .call()
         .change_context( InitImportConfigError( "GENERAL" ) )?;
 
@@ -134,7 +152,7 @@ pub fn init(
         .env( &runtime_env )
         .env_prefix( &[env_prefix, "_SERVER_"].concat() )
         .file( configs_dir.join( "server.toml" ) )
-        .cli( cli_args )
+        .cli( &cli_args.server )
         .call()
         .change_context( InitImportConfigError( "SERVER" ) )?;
 
@@ -143,7 +161,7 @@ pub fn init(
         .env( &runtime_env )
         .env_prefix( &[env_prefix, "_LOGGER_"].concat() )
         .file( configs_dir.join( "logger.toml" ) )
-        .cli( cli_args )
+        .cli( &cli_args.logger )
         .call()
         .change_context( InitImportConfigError( "SERVER" ) )?;
 
@@ -208,17 +226,19 @@ impl FigmentExtractor<'_, Self> for ServerConfigs {}
 
 #[derive(Serialize, Deserialize)]
 pub struct LoggerConfigs {
-    pub log_level:         logger::Level,
-    pub is_stdout_emitted: bool,
-    pub files_emitted:     LoggerFilesEmittedSubconfig,
+    pub log_level:                logger::Level,
+    pub is_stdout_emitted:        bool,
+    pub is_tokio_console_emitted: bool,
+    pub files_emitted:            LoggerFilesEmittedSubconfig,
 }
 
 impl Default for LoggerConfigs {
     fn default() -> Self {
         Self {
-            log_level:         logger::Level::from_str( "debug" ).unwrap(),
-            is_stdout_emitted: true,
-            files_emitted:     LoggerFilesEmittedSubconfig::default(),
+            log_level:                logger::Level::from_str( "debug" ).unwrap(),
+            is_tokio_console_emitted: true,
+            is_stdout_emitted:        true,
+            files_emitted:            LoggerFilesEmittedSubconfig::default(),
         }
     }
 }

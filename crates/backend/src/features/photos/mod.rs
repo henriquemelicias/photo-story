@@ -1,7 +1,8 @@
 mod add_photo;
 
-use crate::infrastructure::{drivers::db, repository::Repository};
 use thiserror::Error;
+
+use crate::infrastructure::{drivers::db, repository::Repository};
 
 #[derive(Error, Debug)]
 pub enum Error {}

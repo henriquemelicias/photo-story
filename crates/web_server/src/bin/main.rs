@@ -1,5 +1,5 @@
 use clap::Parser;
-use error_stack::{FutureExt, IntoReport, Report, ResultExt};
+use error_stack::{Report, ResultExt};
 use leptos::{leptos_config::Env, LeptosOptions};
 use web_server::{logger, settings, Error};
 

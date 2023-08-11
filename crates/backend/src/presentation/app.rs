@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
-use axum::{http::HeaderValue, Router, Extension};
+use axum::{http::HeaderValue, Extension, Router};
 use tower_http::{compression::CompressionLayer, cors::CorsLayer};
 use url::Url;
 
-use crate::{logger, presentation::routes, features, infrastructure};
+use crate::{features, infrastructure, logger, presentation::routes};
 
 pub fn create( frontend_url: &Url ) -> Option<Router> {
     // Main router.
     let mut app = Router::new().nest( "/api/v1", routes::api::create_route() );
-
 
     // Http tracing logs middleware layer.
     app = logger::middleware_http_tracing( app );

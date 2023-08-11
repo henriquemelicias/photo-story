@@ -1,5 +1,5 @@
-use uuid::Uuid;
 use chrono::DateTime;
+use uuid::Uuid;
 
 use crate::{
     domain::entities,

@@ -30,7 +30,7 @@ fn main() -> Result<(), Report<Error>> {
 
     // Tracing logs.
     let ( _maybe_stdio_writer_guard, _maybe_file_writer_guard ) =
-        logger::init( &configs.general.app_name, configs.logger );
+        logger::init( &configs.general.app_name, &configs.logger );
 
     tracing::info!( "Starting {}", configs.general.app_name );
     backend::init_server( configs.server, configs.database ).change_context( Error::ServerInitFailed )?;
