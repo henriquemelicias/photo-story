@@ -1,16 +1,14 @@
-use leptos::{component, view, IntoView, Scope};
+use leptos::{component, view, IntoView };
 
 #[must_use]
 #[component]
-pub fn ComponentFooter( cx: Scope ) -> impl IntoView {
-    view! { cx, <FooterTop/> }
+pub fn ComponentFooter() -> impl IntoView {
+    view! { <FooterTop/> }
 }
 
 #[component]
-fn FooterTop( cx: Scope ) -> impl IntoView {
+fn FooterTop() -> impl IntoView {
     view! {
-        cx,
-
         <footer class="footer bg-base-200 text-base-content flex flex-wrap justify-between p-10">
 
             <div>

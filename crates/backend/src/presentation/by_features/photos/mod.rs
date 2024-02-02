@@ -1,30 +1,33 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-
-use crate::domain::entities;
+use axum::{
+    body::{Body, Bytes, Full},
+    http,
+    http::header,
+    response::{IntoResponse, Response},
+};
+use thiserror::Error;
 
 pub mod add_photo;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Photo {
-    pub id:          Uuid,
-    pub created_at:  DateTime<Utc>,
-    pub updated_at:  DateTime<Utc>,
-    pub url:         String,
-    pub title:       String,
-    pub description: Option<String>,
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error( "Unknown internal error." )]
+    InternalUnknown,
+
+    #[error( "Internal error due to: {0}" )]
+    Internal( String ),
 }
 
-impl From<entities::Photo> for Photo {
-    fn from( photo: entities::Photo ) -> Self {
-        Self {
-            id:          photo.id,
-            created_at:  photo.created_at,
-            updated_at:  photo.updated_at,
-            url:         photo.url,
-            title:       photo.title,
-            description: photo.description,
-        }
+impl IntoResponse for Error {
+    fn into_response( self ) -> Response {
+        unimplemented!();
+        //let ( status, error_message ) = match self {
+        //    Error::InternalUnknown => ( http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string() ),
+        //    Error::Internal( _ ) => ( http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string() ),
+        //};
+
+        //let response_body: Vec<u8> = serialize( &common::api::ErrorResponseBody { message: error_message } )
+        //    .expect( "Failed to deserialize error struct into bytes. This should never fail." );
+
+        //( status, response_body ).into_response()
     }
 }

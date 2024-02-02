@@ -2,7 +2,7 @@
 name = "frontend_admin"
 version = "0.1.0"
 edition = "2021"
-authors = ["Henrique Melícias"]
+authors = ["Henrique Melícias <runry.melicias@gmail.com>"]
 description = "Frontend using Dioxus."
 license = "MIT"
 
@@ -13,14 +13,13 @@ default = []
 common = { path = "../common" }
 
 thiserror = "1.0"
-leptos = { version = "0.4", features = ["nightly", "csr"] }
-leptos_router = { version = "0.4", features = ["nightly", "csr"] }
+leptos = { version = "0.5", features = ["nightly", "csr"] }
+leptos_router = { version = "0.5", features = ["nightly", "csr"] }
 serde = { version = "1.0", features = ["derive"] }
-serde-wasm-bindgen = "0.5.0"
+serde-wasm-bindgen = "0.6"
 tracing = { version = "0.1" }
 tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = ["all"] }
-futures = "0.3"
-gloo = "0.8"
+gloo = "0.10"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = "0.3"

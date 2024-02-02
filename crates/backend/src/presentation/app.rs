@@ -1,14 +1,18 @@
 use std::sync::Arc;
 
-use axum::{http::HeaderValue, Extension, Router};
-use tower_http::{compression::CompressionLayer, cors::CorsLayer};
-use url::Url;
+use axum::{Extension, Router};
+use tower_http::compression::CompressionLayer;
 
 use crate::{features, infrastructure, logger, presentation::routes};
 
-pub fn create( frontend_url: &Url ) -> Option<Router> {
+pub fn create( db: infrastructure::drivers::db::Pool ) -> Router {
     // Main router.
     let mut app = Router::new().nest( "/api/v1", routes::api::create_route() );
+
+    // Services.
+    let photos_service = Arc::new( features::photos::Service::new( db ) );
+
+    app = app.layer( Extension( photos_service ) );
 
     // Http tracing logs middleware layer.
     app = logger::middleware_http_tracing( app );
@@ -16,18 +20,5 @@ pub fn create( frontend_url: &Url ) -> Option<Router> {
     // Compression.
     app = app.layer( CompressionLayer::new().br( true ).no_gzip().no_deflate() );
 
-    // Cors.
-    if cfg!( debug_assertions ) {
-        app = app.layer( CorsLayer::permissive() );
-    } else {
-        app = app.layer( CorsLayer::new().allow_origin( frontend_url.as_str().parse::<HeaderValue>().unwrap() ) );
-    }
-
-    Some( app )
-}
-
-pub fn init_state( app: Router, db: infrastructure::drivers::db::Pool ) -> Router {
-    let photos_service = Arc::new( features::photos::Service::new( db ) );
-
-    app.layer( Extension( photos_service ) )
+    app
 }

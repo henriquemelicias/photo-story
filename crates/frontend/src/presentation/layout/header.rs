@@ -1,11 +1,9 @@
-use leptos::{component, view, IntoView, Scope};
+use leptos::{component, view, IntoView };
 
 #[must_use]
 #[component]
-pub fn ComponentHeader( cx: Scope ) -> impl IntoView {
+pub fn ComponentHeader() -> impl IntoView {
     view! {
-        cx,
-
         <header>
             <Navbar />
         </header>
@@ -13,10 +11,8 @@ pub fn ComponentHeader( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn Navbar( cx: Scope ) -> impl IntoView {
+fn Navbar() -> impl IntoView {
     view! {
-        cx,
-
         <nav class="navbar bg-base-100">
 
             <NavbarStart />
@@ -27,10 +23,8 @@ fn Navbar( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn NavbarStart( cx: Scope ) -> impl IntoView {
+fn NavbarStart() -> impl IntoView {
     view! {
-        cx,
-
         <div class="navbar-start">
             <NavbarDropdownMenu />
             <a class="btn btn-ghost text-xl normal-case">
@@ -41,10 +35,8 @@ fn NavbarStart( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn NavbarDropdownMenu( cx: Scope ) -> impl IntoView {
+fn NavbarDropdownMenu() -> impl IntoView {
     view! {
-        cx,
-
         <div class="dropdown">
 
             <label class="btn btn-ghost lg:hidden" tabindex="0">
@@ -80,10 +72,8 @@ fn NavbarDropdownMenu( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn SvgNavbarDropdownMenu( cx: Scope ) -> impl IntoView {
+fn SvgNavbarDropdownMenu() -> impl IntoView {
     view! {
-        cx,
-
         <svg class="h-5 w-5" fill="none" stroke="currentColor" view_box="0 0 24 24">
             <path stroke_linecap="round" stroke_linejoin="round" stroke_width="2" d="M4 6h16M4 12h8m-8 6h16"/>
         </svg>
@@ -91,10 +81,8 @@ fn SvgNavbarDropdownMenu( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn SvgNavbarMenuEntry( cx: Scope ) -> impl IntoView {
+fn SvgNavbarMenuEntry() -> impl IntoView {
     view! {
-        cx,
-
         <svg class="fill-current" width="24" height="24" view_box="0 0 24 24">
             <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/>
         </svg>
@@ -102,10 +90,8 @@ fn SvgNavbarMenuEntry( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn NavbarCenter( cx: Scope ) -> impl IntoView {
+fn NavbarCenter() -> impl IntoView {
     view! {
-        cx,
-
         <div class="navbar-center hidden lg:flex">
             <NavbarHorizontalMenu />
         </div>
@@ -113,10 +99,8 @@ fn NavbarCenter( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn NavbarHorizontalMenu( cx: Scope ) -> impl IntoView {
+fn NavbarHorizontalMenu() -> impl IntoView {
     view! {
-        cx,
-
         <ul class="menu menu-horizontal px-1">
 
             // Menu entry 1.
@@ -140,10 +124,8 @@ fn NavbarHorizontalMenu( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn NavbarEnd( cx: Scope ) -> impl IntoView {
+fn NavbarEnd() -> impl IntoView {
     view! {
-        cx,
-
         <div class="navbar-end">
             <a class="btn">
                 "Get started"

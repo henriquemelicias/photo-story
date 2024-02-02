@@ -1,7 +1,7 @@
 {
   "build": {
-    "beforeBuildCommand": "mkdir -p ../../target/tauri; trunk build --release --filehash false",
-    "beforeDevCommand": "mkdir -p ../../target/tauri; trunk serve --port 5557",
+    "beforeBuildCommand": "mkdir -p ../../target/tauri; just -f justfile generate_tailwind_css ./styles; trunk build --release --filehash false",
+    "beforeDevCommand": "mkdir -p ../../target/tauri; just -f justfile generate_tailwind_css ./styles; trunk serve --port 5557",
     "devPath": "http://localhost:5557",
     "distDir": "../../../target/tauri/frontend_admin"
   },

@@ -2,13 +2,13 @@
 name = "monitoring"
 version = "0.1.0"
 edition = "2021"
-authors = ["Henrique Melícias"]
+authors = ["Henrique Melícias <runry.melicias@gmail.com>"]
 description = "Library with monitoring utilities such as logger, tracing, metrics, etc..."
 license = "MIT"
 
 [dependencies]
 axum = "0.6"
-console-subscriber = { version = "0.1" }
+console-subscriber = { version = "0.2" }
 lazy_static = "1.4"
 opentelemetry = "0.20"
 opentelemetry-jaeger = "0.19"
@@ -20,8 +20,8 @@ tracing = "0.1"
 tracing-appender = "0.2"
 tracing-bunyan-formatter = "0.3"
 tracing-error = "0.2"
-tracing-log = "0.1"
-tracing-opentelemetry = "0.20"
+tracing-log = "0.2"
+tracing-opentelemetry = "0.21"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 tracing-wasm = "0.2"
 uuid = "1.2"

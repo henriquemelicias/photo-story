@@ -4,6 +4,7 @@
 #![warn( clippy::complexity )]
 #![warn( clippy::perf )]
 #![feature( async_closure )]
+#![feature( lazy_cell )]
 
 #[cfg( target_arch = "wasm32" )]
 use lol_alloc::{FreeListAllocator, LockedAllocator};
@@ -26,7 +27,7 @@ pub fn hydrate() {
 
     use crate::presentation::AppComponent;
 
-    mount_to_body( move |cx| {
-        view! { cx, <AppComponent/> }
+    mount_to_body( move || {
+        view! { <AppComponent/> }
     } );
 }

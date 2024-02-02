@@ -121,6 +121,10 @@ npm-check-updates:
 run-frontend-ssr:
     cargo leptos serve --hot-reload
 
+# Run frontend admin.
+run-frontend-admin:
+    cd ./crates/frontend_admin; cargo tauri dev
+
 # Run backend.
 run-backend ENV="development" PORT="5555" FRONTEND_PORT="5556" LOG_LEVEL="trace":
     # Stop process using same port.

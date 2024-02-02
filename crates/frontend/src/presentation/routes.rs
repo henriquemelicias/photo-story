@@ -1,26 +1,22 @@
 // use crate::presentation::models;
 
-use leptos::{component, view, IntoView, Scope};
+use leptos::{component, view, IntoView };
 use leptos_router::{Route, Routes};
 
 #[must_use]
 #[component]
-pub fn ComponentRouter( cx: Scope ) -> impl IntoView {
+pub fn ComponentRouter() -> impl IntoView {
     view! {
-        cx,
-
         <Routes>
-            <Route path="/" view=|cx| view! { cx, <Home/> }/>
+            <Route path="/" view=|| view! { <Home/> }/>
             // <Route path="" view=|cx| view! { cx, <NotFound/> }/>
         </Routes>
     }
 }
 
 #[component]
-fn Home( cx: Scope ) -> impl IntoView {
+fn Home() -> impl IntoView {
     view! {
-        cx,
-
         <h1 class="text-9xl font-bold underline">
 
             "Home"
@@ -33,6 +29,6 @@ fn Home( cx: Scope ) -> impl IntoView {
 }
 
 #[component]
-fn NotFound( cx: Scope ) -> impl IntoView {
-    view! { cx, <h1>"404"</h1> }
+fn NotFound() -> impl IntoView {
+    view! { <h1>"404"</h1> }
 }

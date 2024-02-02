@@ -1,1 +1,1 @@
-mod create_photo;
+pub mod create_photo;

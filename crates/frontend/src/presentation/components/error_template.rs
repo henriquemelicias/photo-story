@@ -20,12 +20,11 @@ impl AppErrorComponent {
 // Feel free to do more complicated things here than just displaying the error.
 #[component]
 pub fn ErrorComponent(
-    cx: Scope,
     #[prop( optional )] outside_errors: Option<Errors>,
     #[prop( optional )] errors: Option<RwSignal<Errors>>,
 ) -> impl IntoView {
     let errors = match outside_errors {
-        Some( err ) => create_rw_signal( cx, err ),
+        Some( err ) => create_rw_signal( err ),
         None => match errors {
             Some( err ) => err,
             None => panic!( "No Errors found and we expected errors!" ),
@@ -40,7 +39,7 @@ pub fn ErrorComponent(
         .filter_map( |( _k, v )| v.downcast_ref::<AppErrorComponent>().cloned() )
         .collect();
 
-    view! {cx,
+    view! {
         <h1>{if errors.len() > 1 {"Errors:"} else {"Error:"}}</h1>
         <For
             // a function that returns the items we're iterating over; a signal is fine
@@ -48,11 +47,10 @@ pub fn ErrorComponent(
             // a unique key for each item as a reference
             key=|(index, _error)| *index
             // renders each item to a view
-            view= move |cx, error| {
+            children= move |error| {
                 let error_string = error.1.to_string();
                 let error_code= error.1.status_code();
                 view! {
-                    cx,
                     <h2>{error_code.to_string()}</h2>
                     <p>"Message: " {error_string}</p>
                 }

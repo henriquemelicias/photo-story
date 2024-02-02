@@ -1,34 +1,40 @@
-use sqlx::postgres::PgQueryResult;
+use chrono::{DateTime, Utc};
 
-use crate::{
-    domain::entities,
-    infrastructure::{drivers::db, repository, repository::Repository},
+use crate::infrastructure::{
+    drivers::db,
+    repository::{self, Repository},
 };
 
+#[derive(Debug, Clone)]
+pub struct Input {
+    pub created_at:  DateTime<Utc>,
+    pub url:         String,
+    pub title:       String,
+    pub description: Option<String>,
+}
+
+#[derive(sqlx::FromRow)]
+struct Output {
+    id: i32,
+}
+
 impl Repository {
-    pub async fn create_photo<'a, T: db::Queryer<'a>>(
-        &self,
-        db: T,
-        photo: &entities::Photo,
-    ) -> Result<PgQueryResult, repository::Error> {
+    pub async fn create_photo<'a, T: db::Queryer<'a>>( &self, db: T, input: Input ) -> Result<u32, repository::Error> {
         let query = r#"
-            INSERT INTO photos ( id, created_at, updated_at, title, description, url )
-            VALUES ( $1, $2, $3, $4, $5, $6 )
+            INSERT INTO photos ( created_at, url, title, description )
+            VALUES ( $1, $2, $3, $4 )
+            RETURNING id;
         "#;
 
-        let result = sqlx::query( query )
-            .bind( photo.id )
-            .bind( photo.created_at )
-            .bind( photo.updated_at )
-            .bind( &photo.title )
-            .bind( &photo.description )
-            .bind( &photo.url )
-            .execute( db )
-            .await;
+        let row = sqlx::query_as::<_, Output>( query )
+            .bind( input.created_at )
+            .bind( &input.url )
+            .bind( &input.title )
+            .bind( &input.description )
+            .fetch_one( db )
+            .await
+            .map_err( |err| repository::Error::QueryFailed( "photos.create_photo", err ) )?;
 
-        result.map_err( |err| repository::Error::QueryFailed {
-            method: "photos.create_photo".to_string(),
-            source: err,
-        } )
+        u32::try_from( row.id ).map_err( repository::Error::IntConversionFailed )
     }
 }

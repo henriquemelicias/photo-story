@@ -1,4 +1,5 @@
 #![feature( unwrap_infallible )]
+#![feature( stmt_expr_attributes )]
 #![deny( clippy::all )]
 #![warn( clippy::pedantic )]
 #![warn( clippy::nursery )]
@@ -27,9 +28,6 @@ pub enum InitServerError {
     /// Failed to bind on the provided address.
     #[error( "Failed to bind on the address: {0}" )]
     AddressBindFailed( SocketAddr ),
-    /// Failed to create the app.
-    #[error( "Failed to create the app router." )]
-    AppRouterCreationFailed,
     /// Failed to serve the server.
     #[error( "Failed to serve the server." )]
     ServerServeFailed,
@@ -60,8 +58,7 @@ pub async fn init_server(
         server_settings.proxy_url,
         leptos_options,
     )
-    .await
-    .ok_or_else( || report!( InitServerError::AppRouterCreationFailed ) )?;
+    .await;
 
     let server = axum::Server::try_bind( &server_settings.sock_addr_v4.into() )
         .change_context( InitServerError::AddressBindFailed( server_settings.sock_addr_v4.into() ) )?;

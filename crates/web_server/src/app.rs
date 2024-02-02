@@ -1,6 +1,4 @@
 use axum::{body::Body, extract::State, http::Request, response::IntoResponse, routing::get_service, Router};
-#[cfg( feature = "ssr" )]
-use frontend::presentation::AppComponent;
 use hyper::{client::HttpConnector, Uri};
 use leptos::LeptosOptions;
 use settings::validators;
@@ -12,7 +10,7 @@ use tower_http::{
 use url::Url;
 
 #[cfg( feature = "ssr" )]
-use crate::ssr::file_and_error_handler;
+use crate::ssr;
 
 #[derive(Debug, Clone)]
 struct ReverseProxyState {
@@ -28,8 +26,8 @@ pub async fn create(
     static_dir: validators::DirectoryPath,
     assets_dir: validators::DirectoryPath,
     api_url: Url,
-    leptos_options: LeptosOptions,
-) -> Option<Router> {
+    _leptos_options: LeptosOptions,
+) -> Router {
     // Main router.
     let mut app = Router::new();
 
@@ -68,13 +66,7 @@ pub async fn create(
 
     // Server side rendering.
     #[cfg( feature = "ssr" )]
-    {
-        let routes = generate_route_list( |cx| view! {cx, <AppComponent/>} ).await;
-        app = app
-            .leptos_routes( &leptos_options, routes, |cx| view! {cx, <AppComponent/>} )
-            .route( "/leptos/*path", post( leptos_axum::handle_server_fns ) )
-            .fallback( file_and_error_handler );
-    }
+    let mut app: Router = ssr::leptos_routes( app, _leptos_options ).await;
 
     // Http tracing logs middleware layer.
     app = crate::logger::middleware_http_tracing( app );
@@ -85,10 +77,7 @@ pub async fn create(
     // Cors.
     app = app.layer( CorsLayer::permissive() );
 
-    // Add state so it turns from Router<T> (T means that it needs state) to Router<()>. This needs to be the last call to app before returning to make sure it is able to me turned into a service.
-    let app = app.with_state( leptos_options );
-
-    Some( app )
+    app
 }
 
 /// Reverse proxy requests to the API on the backend.

@@ -2,7 +2,7 @@
 name = "frontend"
 version = "0.1.0"
 edition = "2021"
-authors = ["Henrique Melícias"]
+authors = ["Henrique Melícias <runry.melicias@gmail.com>"]
 description = "Frontend using Dioxus."
 license = "MIT"
 
@@ -11,21 +11,22 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = []
-hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
-tailwind_stylesheet = []
-tailwind_inline = []
-tailwind_media = []
+hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "reqwest"]
 
 [dependencies]
 common = { path = "../common" }
 
-gloo = "0.9"
+futures = "0.3"
+gloo = "0.10"
 http = "0.2"
-leptos = { version = "0.4", features = ["nightly", "miniserde"] }
-leptos_meta = { version = "0.4", features = ["nightly"] }
-leptos_router = { version = "0.4", features = ["nightly"] }
+leptos = { version = "0.5", features = ["nightly", "rkyv"] }
+leptos_meta = { version = "0.5", features = ["nightly"] }
+leptos_router = { version = "0.5", features = ["nightly"] }
 lol_alloc = "0.4"
+# reqwest = { version = "0.11", features = ["json", "gzip", "brotli", "rustls-tls-webpki-roots"], optional = true, default-features = false}
+reqwest = { version = "0.11", features = ["rustls-tls-webpki-roots"], optional = true, default-features = false}
+rkyv = { version = "0.7", features = ["copy", "copy_unsafe", "validation"] }
 thiserror = "1.0"
 tracing = { version = "0.1" }
 wasm-bindgen = "0.2"
-web-sys = "0.3"
+web-sys = { version= "0.3", features = ["AbortController"]}

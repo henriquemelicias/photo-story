@@ -1,8 +1,8 @@
 use thiserror::Error;
 
-mod photos;
+pub mod photos;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Repository {}
 
 impl Repository {
@@ -11,10 +11,8 @@ impl Repository {
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error( "Failed to execute database query in {method} due to: {source}." )]
-    QueryFailed {
-        method: String,
-        #[source]
-        source: sqlx::Error,
-    },
+    #[error( "Failed to execute database query in {0} due to: {1}." )]
+    QueryFailed( &'static str, #[source] sqlx::Error ),
+    #[error( "Failed to cast due to: {0}." )]
+    IntConversionFailed( #[from] std::num::TryFromIntError ),
 }

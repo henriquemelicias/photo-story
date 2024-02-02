@@ -2,12 +2,18 @@ mod add_photo;
 
 use thiserror::Error;
 
-use crate::infrastructure::{drivers::db, repository::Repository};
+use crate::infrastructure::{drivers::db, repository, repository::Repository};
 
 #[derive(Error, Debug)]
-pub enum Error {}
+pub enum Error {
+    // Photos.
 
-#[derive(Debug)]
+    // Other.
+    #[error( transparent )]
+    Internal( #[from] repository::Error ),
+}
+
+#[derive(Debug, Clone)]
 pub struct Service {
     db:   db::Pool,
     repo: Repository,

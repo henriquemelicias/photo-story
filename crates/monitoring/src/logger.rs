@@ -26,13 +26,11 @@ use axum::{
     http::{HeaderMap, Request, Response},
     Router,
 };
-use lazy_static::__Deref;
 use serde::{Deserialize, Serialize};
 use tower_http::{classify::ServerErrorsFailureClass, trace as http_trace};
 use tracing::Span;
 pub use tracing_appender::non_blocking::WorkerGuard;
 use tracing_bunyan_formatter::BunyanFormattingLayer;
-use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
 use uuid::Uuid;
 
@@ -177,12 +175,15 @@ pub fn init( level_filter: &Level, layers_enabled: &Vec<EnableLayer> ) -> ( Opti
                 layers.push( console_subscriber::spawn().boxed() );
 
                 #[cfg( not( tokio_unstable ) )]
-                eprintln!( "Tokio-console tracing impossible to enable due to missing RUSTFLAGS='--cfg tokio_unstable'. Please rebuild." );
+                eprintln!(
+                    "Tokio-console tracing impossible to enable due to missing RUSTFLAGS='--cfg tokio_unstable'. \
+                     Please rebuild."
+                );
             }
             // Send traces to Jaeger. The associated value is moved.
             EnableLayer::Jaeger( tracer ) => {
-                        let opentelemetry_layer = tracing_opentelemetry::layer().with_tracer( tracer.clone() );
-                        layers.push( opentelemetry_layer.boxed() );
+                let opentelemetry_layer = tracing_opentelemetry::layer().with_tracer( tracer.clone() );
+                layers.push( opentelemetry_layer.boxed() );
             }
         }
     }

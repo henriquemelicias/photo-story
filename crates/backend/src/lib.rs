@@ -4,8 +4,10 @@
 #![warn( clippy::complexity )]
 #![warn( clippy::perf )]
 
+// Expose app Router creation to facilitate e2e tests.
 pub use error::Error;
-use error_stack::{report, Report, ResultExt};
+use error_stack::{Report, ResultExt};
+pub use presentation::app;
 use thiserror::Error;
 use tracing::instrument;
 mod domain;
@@ -22,9 +24,6 @@ pub enum InitServerError {
     /// Failed to bind on the provided address.
     #[error( "Failed to bind on the address: {0}" )]
     AddressBindFailed( std::net::SocketAddrV4 ),
-    /// Failed to create the app.
-    #[error( "Failed to create the app router." )]
-    AppRouterCreationFailed,
     /// Failed to connect to the database.
     #[error( "Failed to connect to the database." )]
     DatabaseConnectionFailed,
@@ -54,10 +53,6 @@ pub async fn init_server(
         database_settings.max_lifetime_minutes,
     );
 
-    // Create app router.
-    let app = presentation::app::create( &server_settings.frontend_url )
-        .ok_or_else( || report!( InitServerError::AppRouterCreationFailed ) )?;
-
     // Database connection.
     let db = infrastructure::drivers::db::connect(
         &database_settings.url,
@@ -76,8 +71,23 @@ pub async fn init_server(
         tracing::info!( "Database migrations executed successfully." );
     }
 
-    // Initialize the server state and services.
-    let app = presentation::app::init_state( app, db );
+    // Create app router.
+    let mut app = presentation::app::create( db );
+
+    // Cors.
+    if cfg!( debug_assertions ) {
+        app = app.layer( tower_http::cors::CorsLayer::permissive() );
+    } else {
+        app = app.layer(
+            tower_http::cors::CorsLayer::new().allow_origin(
+                server_settings
+                    .frontend_url
+                    .as_str()
+                    .parse::<axum::http::HeaderValue>()
+                    .unwrap(),
+            ),
+        );
+    }
 
     // Server.
     let server = axum::Server::try_bind( &server_settings.sock_addr_v4.into() )

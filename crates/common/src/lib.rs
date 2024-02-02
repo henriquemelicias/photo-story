@@ -3,3 +3,6 @@
 #![warn( clippy::nursery )]
 #![warn( clippy::complexity )]
 #![warn( clippy::perf )]
+
+pub mod api;
+pub mod entities;

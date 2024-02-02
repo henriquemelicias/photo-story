@@ -2,7 +2,7 @@
 name = "settings"
 version = "0.1.0"
 edition = "2021"
-authors = ["Henrique Melícias"]
+authors = ["Henrique Melícias <runry.melicias@gmail.com>"]
 description = "A simple settings library using figment."
 license = "MIT"
 

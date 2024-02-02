@@ -1,7 +1,7 @@
 #![allow( non_snake_case )]
 #![allow( clippy::module_name_repetitions )]
 
-use leptos::{component, create_signal, view, Errors, IntoView, Scope, SignalUpdate};
+use leptos::{component, create_signal, view, Errors, IntoView, SignalUpdate};
 use leptos_meta::{provide_meta_context, Html, Meta, Style, Title};
 use leptos_router::Router;
 
@@ -18,12 +18,11 @@ use crate::presentation::{
 };
 
 #[component]
-pub fn AppComponent( cx: Scope ) -> impl IntoView {
+pub fn AppComponent() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
-    provide_meta_context( cx );
+    provide_meta_context();
 
     view! {
-        cx,
         <Html lang="en" />
 
         <Title text="Welcome to Leptos"/>
@@ -32,13 +31,13 @@ pub fn AppComponent( cx: Scope ) -> impl IntoView {
         <TailwindStyle />
 
         // content for this welcome page
-        <Router fallback=|cx| {
+        <Router fallback=|| {
             let mut outside_errors = Errors::default();
             outside_errors.insert_with_default_key(AppErrorComponent::NotFound);
-            view! { cx,
+            view! {
                 <ErrorComponent outside_errors/>
             }
-            .into_view(cx)
+            .into_view()
         }>
             <main>
                 <ComponentHeader />
@@ -62,9 +61,9 @@ pub fn AppComponent( cx: Scope ) -> impl IntoView {
 // }
 
 #[component]
-fn TailwindStyle( cx: Scope ) -> impl IntoView {
+fn TailwindStyle() -> impl IntoView {
     let style = include_str!( "../../styles/dist/tailwind.css" );
-    view! { cx,
+    view! {
         <Style>
             {style}
         </Style>
@@ -73,12 +72,12 @@ fn TailwindStyle( cx: Scope ) -> impl IntoView {
 
 /// Renders the home page of your application.
 #[component]
-fn HomePage( cx: Scope ) -> impl IntoView {
+fn HomePage() -> impl IntoView {
     // Creates a reactive value to update the button
-    let ( count, set_count ) = create_signal( cx, 0 );
+    let ( count, set_count ) = create_signal( 0 );
     let on_click = move |_| set_count.update( |count| *count += 1 );
 
-    view! { cx,
+    view! {
         <h1>"Welcome to Leptos!"</h1>
         <button on:click=on_click>"Click Me: " {count}</button>
     }
